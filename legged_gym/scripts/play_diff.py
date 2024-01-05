@@ -20,6 +20,8 @@ from legged_gym.envs.diffusion.diffusion_env_wrapper import DiffusionEnvWrapper
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from diffusion_policy.model.common.normalizer import LinearNormalizer
 
+from trt_model import TRTModel
+
 
 class logger_config:
     EXPORT_POLICY=False
@@ -56,7 +58,7 @@ def play(args):
     # train_cfg.runner.resume = True
 
     # model = torch.load("some checkpoint")
-    model = None
+    model = TRTModel()
     noise_scheduler = DDPMScheduler(
         num_train_timesteps=100,
         beta_start=0.0001,
