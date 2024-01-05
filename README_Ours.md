@@ -95,7 +95,9 @@ conda config --env --add channels robostack
 python legged_gym/scripts/play_real.py --task=real_amp --sim_device=cpu --rl_device=cpu
 ```
 
-3. Start Topic_Controller in rqt, then use joystick to turn on (A) / off (B) the policy
+3. Start Topic_Controller in rqt, then use joystick to turn on (A) / off (B) the policy. 
+
+Note: You can also send a Float64MultiArray message to topic go1_lowlevel/status_flag ([0] would turn off and [1] would turn on the policy). The easiest way is to install rqt_publisher, start rqt and find it in plugins, then publish the on/off message. 
 
 ## Diffusion
 
@@ -139,6 +141,10 @@ python legged_gym/scripts/play_diff.py --task=a1_amp --sim_device=cpu --rl_devic
 ```bash
 python legged_gym/scripts/play_diff_real.py --task=real_amp --sim_device=cpu --rl_device=cpu
 ```
+
+5. Start Topic_Controller in rqt, then use joystick to turn on (A) / off (B) the policy. 
+
+Note: You can also send a Float64MultiArray message to topic go1_lowlevel/status_flag ([0] would turn off and [1] would turn on the policy). The easiest way is to install rqt_publisher, start rqt and find it in plugins, then publish the on/off message. 
 
 
 # Robot Dog Init
