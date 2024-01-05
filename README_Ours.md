@@ -19,28 +19,60 @@ export ROS_MASTER_URI=http://master_ip:11311
 export ROS_IP=compute_ip
 ```
 
+
+Connect Mini PC (Master PC) to dog via ethernet cable
+
+Make sure the master is `192.168.123.11`. If not, right click the system ethernet connection and select the other profile.
+
+
 2. Run ROS on master PC
-```
+
+Terminator launch four windows
+
+### Window #1:
+
+```bash
+source ~/qiayuan_ws/devel/setup.bash
 roscore
 ```
 
-3. Run Hardware/Gazebo
+### Window #2 (Run Hardware/Gazebo):
 
 Hardware: 
-```
+
+```bash
+source ~/qiayuan_ws/devel/setup.bash
 roslaunch legged_unitree_hw legged_unitree_hw.launch
 ```
 
+The dog motor should be enabled.
+
 Gazebo: 
-```
+```bash
+source ~/qiayuan_ws/devel/setup.bash
 roslaunch legged_unitree_description empty_world.launch
 ```
 
-4. Run lowlevel controller
+### Window #3 (Run lowlevel controller)
 
+```bash
+source ~/qiayuan_ws/devel/setup.bash
+roslaunch legged_rl_controllers load_legged_rl_controller.launch
 ```
-roslaunch legged_rl_controllers load_rl_controller.launch
+
+### Window #4
+
+```bash
+rqt
 ```
+
+Under "Controller manager", click namespace, select the available namespace
+
+Under controller, "target controller", right click, select "Start"
+
+Dog should stand up by itself.
+
+
 
 ## AMP on hardware
 1. Install Robostack
