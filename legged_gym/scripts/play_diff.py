@@ -82,7 +82,7 @@ def play(args):
     horizon = 16
     obs_dim = env.num_obs
     action_dim = env.num_actions
-    n_action_steps = 4
+    n_action_steps = 6
     n_obs_steps = 8
     num_inference_steps=20
     obs_as_cond=True
@@ -102,7 +102,7 @@ def play(args):
         pred_action_steps_only=pred_action_steps_only,
     )
 
-    env = DiffusionEnvWrapper(env=env, policy=policy, n_obs_steps=n_obs_steps, n_action_steps=6)
+    env = DiffusionEnvWrapper(env=env, policy=policy, n_obs_steps=n_obs_steps, n_action_steps=n_action_steps)
 
     for i in range(1000000):
         env.step()

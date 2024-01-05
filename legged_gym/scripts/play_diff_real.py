@@ -53,12 +53,10 @@ def play(args):
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
     obs = env.get_observations()
     # load policy
-    # train_cfg.runner.resume = True
-
     model = torch.load("converted_model.pt")
     # model = None
     noise_scheduler = DDPMScheduler(
-        num_train_timesteps=100,
+        num_train_timesteps=20,
         beta_start=0.0001,
         beta_end=0.02,
         beta_schedule="squaredcos_cap_v2",
@@ -68,16 +66,18 @@ def play(args):
 
     )
     normalizer = LinearNormalizer()
-    # normalizer.load_state_dict("some checkpoint")
+    original_ckpt = torch.load("latest.ckpt")
+    original_ckpt = {k: v for k, v in original_ckpt['state_dicts']['model'].items() if "normalizer" in k}
+    normalizer._load_from_state_dict(original_ckpt, 'normalizer.', None, None, None, None, None)
     horizon = 16
     obs_dim = env.num_obs
     action_dim = env.num_actions
-    n_action_steps = 8
+    n_action_steps = 6
     n_obs_steps = 8
     num_inference_steps=20
     obs_as_cond=True
     pred_action_steps_only=False
-
+    
     policy = DiffusionTransformerLowdimPolicy(
         model=model,
         noise_scheduler=noise_scheduler,
@@ -92,7 +92,7 @@ def play(args):
         pred_action_steps_only=pred_action_steps_only,
     )
 
-    env = DiffusionEnvWrapper(env=env, policy=policy, n_obs_steps=n_obs_steps, n_action_steps=6)
+    env = DiffusionEnvWrapper(env=env, policy=policy, n_obs_steps=n_obs_steps, n_action_steps=n_action_steps)
 
 
     idx = 0
@@ -129,7 +129,10 @@ def play(args):
         return stop_event
 
     # receive_stop_event = start_call_every_thread(1/1000, receive_obs_callback)
-    action_stop_event = start_call_every_thread(1/5, infer_action_callback)
+
+    # TODO: set the frequency of diffusion policy here. 
+    # The frequency should be 30 / n_action_steps
+    action_stop_event = start_call_every_thread(1/5, infer_action_callback) 
     save_flag = LOG_EXP
 
     # stop_event.set()

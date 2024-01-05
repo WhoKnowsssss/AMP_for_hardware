@@ -75,7 +75,13 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
             trajectory[condition_mask] = condition_data[condition_mask]
 
             # 2. predict model output
-            model_output = model(trajectory, t, cond)
+            if not isinstance(model, nn.Module):
+                trajectory = trajectory.numpy()
+                t = t.numpy()
+                cond = cond.numpy()
+            model_output = model.forward(trajectory, t, cond)
+
+            model_output = torch.from_numpy(model_output)
 
             # 3. compute previous image: x_t -> x_t-1
             trajectory = scheduler.step(
