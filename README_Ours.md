@@ -89,3 +89,12 @@ Note: focus on model first. Normalizer shouldn't be hard
 python legged_gym/scripts/play_diff.py --task=real_amp --sim_device=cpu --rl_device=cpu
 ```
 
+
+# Robot Dog Init
+
+L2 + A
+
+L2 + B
+
+L1 + L2 + Start
+
