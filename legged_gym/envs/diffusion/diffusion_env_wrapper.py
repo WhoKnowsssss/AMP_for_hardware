@@ -36,5 +36,3 @@ class DiffusionEnvWrapper:
             self.state_history[:,-1,:] = obs
             self.action_history[:,-1,:] = action_step
             # single_obs_dict = {'obs': self.state_history[:,-1,:].to('cuda:0')}
-
-            time.sleep(1/30)
