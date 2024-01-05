@@ -43,19 +43,10 @@ from legged_gym.envs.diffusion.diffusion_env_wrapper import DiffusionEnvWrapper
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from diffusion_policy.model.common.normalizer import LinearNormalizer
 
-from trt_model import TRTModel
-
-
-class logger_config:
-    EXPORT_POLICY=False
-    RECORD_FRAMES=False
-    robot_index=0
-    joint_index=1
-
-def add_input(input_queue, stop_event):
-    while not stop_event.is_set():
-        input_queue.put(sys.stdin.read(1))
-
+try:
+    from trt_model import TRTModel
+except:
+    print("Install TRT for real experiments")
 def play(args):
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing

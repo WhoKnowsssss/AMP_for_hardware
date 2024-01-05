@@ -97,10 +97,10 @@ python legged_gym/scripts/play_real.py --task=real_amp --sim_device=cpu --rl_dev
 
 3. Start Topic_Controller in rqt, then use joystick to turn on (A) / off (B) the policy
 
-## Diffusion on hardware
+## Diffusion
 
 
-2. Install diffusion policy
+1. Install diffusion policy
 
 ```https://github.com/Ruofeng-Wang/diffusion_policy```
 
@@ -109,24 +109,35 @@ python legged_gym/scripts/play_real.py --task=real_amp --sim_device=cpu --rl_dev
 pip install -e .
 ```
 
-
+2. Install dependencies
 You don't have to install all the dependencies. I installed these: 
 
 ```bash
 pip install einop
 pip install diffusers
 pip install zarr
+pip install omegaconf
+pip install dill
 ```
 
+### Isaac Gym
+
 3. Modify ```legged_gym/scripts/play_diff.py``` to load model and normalizer correctly. 
-
-Note: focus on model first. Normalizer shouldn't be hard
-
 
 4. Run command
 
 ```bash
-python legged_gym/scripts/play_diff.py --task=real_amp --sim_device=cpu --rl_device=cpu
+python legged_gym/scripts/play_diff.py --task=a1_amp --sim_device=cpu --rl_device=cpu
+```
+
+### Gazebo/Hardware
+
+3. Modify ```legged_gym/scripts/play_diff_real.py``` to load model and normalizer correctly. 
+
+4. Run command
+
+```bash
+python legged_gym/scripts/play_diff_real.py --task=real_amp --sim_device=cpu --rl_device=cpu
 ```
 
 
