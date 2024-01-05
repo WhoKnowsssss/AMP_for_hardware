@@ -104,7 +104,12 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
 
         assert 'obs' in obs_dict
         assert 'past_action' not in obs_dict # not implemented yet
-        nobs = self.normalizer['obs'].normalize(obs_dict['obs'])
+        
+        # HACK: remove normalizer for testing
+        # nobs = self.normalizer['obs'].normalize(obs_dict['obs'])
+        nobs = obs_dict['obs']
+
+
         B, _, Do = nobs.shape
         To = self.n_obs_steps
         assert Do == self.obs_dim
@@ -143,7 +148,10 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
         
         # unnormalize prediction
         naction_pred = nsample[...,:Da]
-        action_pred = self.normalizer['action'].unnormalize(naction_pred)
+
+        # HACK: remove normalizer
+        # action_pred = self.normalizer['action'].unnormalize(naction_pred)
+        action_pred = naction_pred
 
         # get action
         if self.pred_action_steps_only:
