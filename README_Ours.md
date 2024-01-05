@@ -77,7 +77,7 @@ Dog should stand up by itself.
 ## AMP on hardware
 1. Install Robostack
 
-```https://robostack.github.io/GettingStarted.html```
+https://robostack.github.io/GettingStarted.html
 
 replace 
 ```
@@ -104,8 +104,15 @@ python legged_gym/scripts/play_real.py --task=real_amp --sim_device=cpu --rl_dev
 
 ```https://github.com/Ruofeng-Wang/diffusion_policy```
 
-You don't have to install all the dependencies. I installed these: 
+
+```bash
+pip install -e .
 ```
+
+
+You don't have to install all the dependencies. I installed these: 
+
+```bash
 pip install einop
 pip install diffusers
 pip install zarr
@@ -117,7 +124,8 @@ Note: focus on model first. Normalizer shouldn't be hard
 
 
 4. Run command
-```
+
+```bash
 python legged_gym/scripts/play_diff.py --task=real_amp --sim_device=cpu --rl_device=cpu
 ```
 
