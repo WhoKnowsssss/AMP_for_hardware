@@ -63,7 +63,7 @@ def play(args):
     train_cfg.runner.amp_num_preload_transitions = 1
 
 
-    use_trt_acceleration = False
+    use_trt_acceleration = True
 
 
     # prepare environment

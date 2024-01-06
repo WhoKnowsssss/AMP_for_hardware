@@ -93,10 +93,10 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
                 model_output = model.forward(trajectory, t_reshaped, cond)
 
 
-            # # Export model as ONNX file ----------------------------------------------------
+            # Export model as ONNX file ----------------------------------------------------
             # torch.onnx.export(
             #     model, 
-            #     (trajectory, t, cond),
+            #     (trajectory, t_reshaped, cond),
             #     "model.onnx", 
             #     input_names=["sample", "timestep", "cond"], 
             #     output_names=["action"], 
