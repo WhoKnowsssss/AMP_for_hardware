@@ -74,12 +74,18 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
             # 1. apply conditioning
             trajectory[condition_mask] = condition_data[condition_mask]
 
-            # HACK: patch
-            t_reshaped = t.repeat(1)
+            # reshape time to be the same as batch size
+            t_reshaped = t.repeat(trajectory.shape[0])
 
+
+            # These are for debug purposes
             # trajectory = torch.zeros(trajectory.shape)
             # t_reshaped = torch.zeros(t_reshaped.shape)
             # cond = torch.zeros(cond.shape)
+
+            # trajectory = torch.zeros((1, 16, 12), dtype=torch.float32)
+            # t_reshaped = torch.zeros((1, ), dtype=torch.float32)
+            # cond = torch.zeros((1, 8, 42), dtype=torch.float32)
 
 
             # 2. predict model output
@@ -93,27 +99,20 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
                 model_output = model.forward(trajectory, t_reshaped, cond)
 
 
-            # Export model as ONNX file ----------------------------------------------------
-            # torch.onnx.export(
-            #     model, 
-            #     (trajectory, t_reshaped, cond),
-            #     "model.onnx", 
-            #     input_names=["sample", "timestep", "cond"], 
-            #     output_names=["action"], 
-            #     do_constant_folding=True, 
-            #     verbose=True, 
-            #     keep_initializers_as_inputs=True, 
-            #     opset_version=17, 
-            #     dynamic_axes={}
-            #     )
-
-            # print("Succeeded converting model into ONNX!")
-
-            # breakpoint()
-
             # model_output[0][0]
-            #tensor([-0.2841,  2.6574, -2.2819, -0.9761, -1.7571, -0.4678, -0.6720, -0.6814,
-            #        -1.3744, -0.7988, -3.2801,  1.2031]
+            # given all zero output, the following show match
+
+            # torch
+            #tensor([-0.6648,  2.7134, -2.5313, -1.4247, -1.9261, -0.2153, -0.2339, -1.0256,
+        #            -0.8402, -1.0432, -2.6142,  0.4672]
+
+            # trt
+            # tensor([-0.8238,  2.8214, -2.6603, -1.6748, -1.8832, -0.1392, -0.7466, -1.2116,
+            #         -0.9013, -1.0385, -3.6310,  1.1337])
+
+                    # [-0.8238,  2.8214, -2.6603, -1.6748, -1.8832, -0.1392, -0.7466, -1.2116, 
+                    #  -0.9013, -1.0385, -3.6310,  1.1337]
+
 
             # 3. compute previous image: x_t -> x_t-1
             trajectory = scheduler.step(

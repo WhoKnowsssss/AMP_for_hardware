@@ -76,6 +76,7 @@ def play(args):
         model = TRTModel("./checkpoints/model.plan")
     else:    
         model = torch.load("./checkpoints/converted_model.pt")
+        model.eval()
     # model = None
     noise_scheduler = DDPMScheduler(
         num_train_timesteps=20,
