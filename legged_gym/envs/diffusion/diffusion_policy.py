@@ -74,16 +74,46 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
             # 1. apply conditioning
             trajectory[condition_mask] = condition_data[condition_mask]
 
+            # HACK: patch
+            t_reshaped = t.repeat(1)
+
+            # trajectory = torch.zeros(trajectory.shape)
+            # t_reshaped = torch.zeros(t_reshaped.shape)
+            # cond = torch.zeros(cond.shape)
+
+
             # 2. predict model output
             if not isinstance(model, nn.Module):
                 trajectory_np = trajectory.numpy()
-                t_np = t.numpy()
+                t_np = t_reshaped.numpy()
                 cond_np = cond.numpy()
                 model_output = model.forward(trajectory_np, t_np, cond_np)
                 model_output = torch.from_numpy(model_output)
             else:
-                model_output = model.forward(trajectory, t, cond)
+                model_output = model.forward(trajectory, t_reshaped, cond)
 
+
+            # # Export model as ONNX file ----------------------------------------------------
+            # torch.onnx.export(
+            #     model, 
+            #     (trajectory, t, cond),
+            #     "model.onnx", 
+            #     input_names=["sample", "timestep", "cond"], 
+            #     output_names=["action"], 
+            #     do_constant_folding=True, 
+            #     verbose=True, 
+            #     keep_initializers_as_inputs=True, 
+            #     opset_version=17, 
+            #     dynamic_axes={}
+            #     )
+
+            # print("Succeeded converting model into ONNX!")
+
+            # breakpoint()
+
+            # model_output[0][0]
+            #tensor([-0.2841,  2.6574, -2.2819, -0.9761, -1.7571, -0.4678, -0.6720, -0.6814,
+            #        -1.3744, -0.7988, -3.2801,  1.2031]
 
             # 3. compute previous image: x_t -> x_t-1
             trajectory = scheduler.step(
