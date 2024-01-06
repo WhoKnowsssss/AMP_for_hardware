@@ -62,13 +62,20 @@ def play(args):
 
     train_cfg.runner.amp_num_preload_transitions = 1
 
+
+    use_trt_acceleration = False
+
+
     # prepare environment
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
     _, _ = env.reset()
     obs = env.get_observations()
     # load policy 
     # TODO: change to TRT model
-    model = torch.load("./checkpoints/converted_model.pt")
+    if use_trt_acceleration:
+        model = TRTModel("./checkpoints/model.plan")
+    else:    
+        model = torch.load("./checkpoints/converted_model.pt")
     # model = None
     noise_scheduler = DDPMScheduler(
         num_train_timesteps=20,
