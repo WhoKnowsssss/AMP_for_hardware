@@ -74,7 +74,8 @@ def play(args):
     # TODO: change to TRT model
     if use_trt_acceleration:
         model = TRTModel("./checkpoints/model.plan")
-    else:    
+    else:
+        # converted_model.pt already contains the trained weights
         model = torch.load("./checkpoints/converted_model.pt")
         model.eval()
     # model = None
