@@ -68,7 +68,7 @@ def play(args):
     obs = env.get_observations()
     # load policy 
     # TODO: change to TRT model
-    model = torch.load("converted_model.pt")
+    model = torch.load("./checkpoints/converted_model.pt")
     # model = None
     noise_scheduler = DDPMScheduler(
         num_train_timesteps=20,
@@ -81,7 +81,7 @@ def play(args):
 
     )
     normalizer = LinearNormalizer()
-    original_ckpt = torch.load("latest.ckpt")
+    original_ckpt = torch.load("./checkpoints/latest.ckpt")
     original_ckpt = {k: v for k, v in original_ckpt['state_dicts']['model'].items() if "normalizer" in k}
     normalizer._load_from_state_dict(original_ckpt, 'normalizer.', None, None, None, None, None)
     horizon = 16
