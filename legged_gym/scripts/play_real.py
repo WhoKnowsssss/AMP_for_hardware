@@ -1,3 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Copyright (c) 2021 ETH Zurich, Nikita Rudin
+
 from legged_gym import LEGGED_GYM_ROOT_DIR
 import os
 import threading
@@ -12,11 +42,12 @@ import time
 import sys
 import threading
 import queue
+
 from matplotlib import pyplot as plt
+
 
 import signal
 import sys
-
 def sigint_handler(signum, frame):
 	print("  Ctrl + C Exit!")
 	sys.exit(0)
@@ -54,7 +85,7 @@ def play(args):
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
     obs = env.get_observations()
     # load policy
-    # train_cfg.runner.resume = True
+    train_cfg.runner.resume = True
     ppo_runner, train_cfg = task_registry.make_alg_runner(env=env, name=args.task, args=args, train_cfg=train_cfg)
     policy = ppo_runner.get_inference_policy(device=env.device)
     
@@ -78,19 +109,7 @@ def play(args):
     stand_override = False
 
     s = time.perf_counter()
-
-
-    # with open('../test_results_plotting/real_obs_0503_5.pkl', 'rb') as f:
-    #     import pickle
-    #     gz_obss, _ = pickle.load(f)
-    #     gz_obss = torch.tensor(gz_obss)
-        
-    # asynchronous step
-    # def receive_obs_callback():
-    #     # update obs. calculate reward
-    #     nonlocal env, idx, s
-    #     # env.raw_observation=env._udp.receive_observation()
-    #     # s = time.perf_counter()
+    s2 = time.perf_counter()
 
 
     def infer_action_callback():
@@ -98,21 +117,12 @@ def play(args):
 
         global_idx += 1
 
-        # if start_idx < global_idx:
-        #     env._state_flag = 1
-        # if env._state_flag == 1 and LOG_EXP:
-        #     idx += 1
-            # obss[idx,:] = obs[0].detach().cpu().numpy()
-            # filter_obss[idx,:] = env.final_actions[0]
-            # obs[0] = gz_obss[idx]
-        # obs, _, rews, dones, infos = env.get_observations()
-
         if not stand_override:
-            actions = policy(obs.detach())
-            obs, _, rews, dones, infos, _, _ = env.step(actions.detach())
-        print('freq: ', 1/(time.perf_counter()-s))
-        s = time.perf_counter()
-    
+            with torch.no_grad():
+                actions = policy(obs.detach())
+                obs, _, rews, dones, infos, _, _ = env.step(actions.detach())
+
+        s = time.perf_counter()    
 
     def call_every(seconds, callback, stop_event):
         t1 = time.perf_counter()
@@ -133,22 +143,13 @@ def play(args):
 
 
     
-    # receive_stop_event = start_call_every_thread(1/1000, receive_obs_callback)
-    action_stop_event = start_call_every_thread(1/30, infer_action_callback)
+    action_stop_event = start_call_every_thread(0.03, infer_action_callback)
     save_flag = LOG_EXP
 
     # stop_event.set()
     while True:
-        # if idx > 600:
-        #     env.a = 0.05
-        # # if idx > 600:
-        # #     env.a = 0.1
-        # else:
-        #     env.a = 0.0
         time.sleep(100)
-        # env.raw_observation=env._udp.receive_observation()
-        # time_now = int(time.time() * 1000)
-        # print("time now = ",time_now,"   time udp = ",data)
+
 if __name__ == '__main__':
     EXPORT_POLICY = False
     RECORD_FRAMES = False
