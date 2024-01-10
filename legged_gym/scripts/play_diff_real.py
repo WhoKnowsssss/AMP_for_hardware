@@ -116,11 +116,19 @@ def play(args):
 
         global_idx += 1
     
-        env.step()
-        # print('freq: ', 1/(time.perf_counter()-s))
+        # env.step()
+        env.step_action()
+        print('freq: ', 1/(time.perf_counter()-s))
         s = time.perf_counter()
-    
 
+    def infer_diffusion_callback():
+        nonlocal env
+        if env.step_diffusion_flag:
+            s2 = time.perf_counter()
+            env.step_diffusion()
+            print('diff time: ', time.perf_counter() - s2)
+            env.step_diffusion_flag = False
+    
     def call_every(seconds, callback, stop_event):
         t1 = time.perf_counter()
         t2 = time.perf_counter()
@@ -141,7 +149,11 @@ def play(args):
 
     # TODO: set the frequency of diffusion policy here. 
     # The frequency should be 30 / n_action_steps
-    action_stop_event = start_call_every_thread(1/5, infer_action_callback) 
+    action_stop_event = start_call_every_thread(1/30, infer_action_callback) 
+    diff_stop_event = start_call_every_thread(1/50, infer_diffusion_callback) 
+
+
+    
     save_flag = LOG_EXP
 
     # stop_event.set()
