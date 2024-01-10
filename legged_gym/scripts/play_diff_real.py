@@ -20,6 +20,7 @@ from legged_gym.envs.diffusion.diffusion_env_wrapper import DiffusionEnvWrapper
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from diffusion_policy.model.common.normalizer import LinearNormalizer
 
+from trt_model import TRTModel
 
 class logger_config:
     EXPORT_POLICY=False
@@ -42,6 +43,9 @@ def play(args):
     env_cfg.domain_rand.randomize_friction = False
     env_cfg.domain_rand.push_robots = False
 
+
+    use_trt_acceleration = True
+
     num_log_steps = 100
     log_counter = 0
     obs_log = []
@@ -53,8 +57,13 @@ def play(args):
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
     obs = env.get_observations()
     # load policy
-    model = torch.load("converted_model.pt")
-    # model = None
+    if use_trt_acceleration:
+        model = TRTModel("./checkpoints/model.plan")
+    else:
+        # converted_model.pt already contains the trained weights
+        model = torch.load("./checkpoints/converted_model.pt")
+        model.eval()
+    
     noise_scheduler = DDPMScheduler(
         num_train_timesteps=20,
         beta_start=0.0001,
@@ -66,7 +75,7 @@ def play(args):
 
     )
     normalizer = LinearNormalizer()
-    original_ckpt = torch.load("latest.ckpt")
+    original_ckpt = torch.load("./checkpoints/latest.ckpt")
     original_ckpt = {k: v for k, v in original_ckpt['state_dicts']['model'].items() if "normalizer" in k}
     normalizer._load_from_state_dict(original_ckpt, 'normalizer.', None, None, None, None, None)
     horizon = 16

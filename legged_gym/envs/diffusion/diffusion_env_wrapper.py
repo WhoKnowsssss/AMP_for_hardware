@@ -37,4 +37,6 @@ class DiffusionEnvWrapper:
             self.action_history[:,-1,:] = action_step
             # single_obs_dict = {'obs': self.state_history[:,-1,:].to('cuda:0')}
 
-            time.sleep(1/30)
+            # don't sleep for last step
+            if (i < self.n_action_steps - 1):
+                time.sleep(1/30)
