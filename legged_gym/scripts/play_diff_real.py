@@ -81,7 +81,7 @@ def play(args):
     horizon = 16
     obs_dim = env.num_obs
     action_dim = env.num_actions
-    n_action_steps = 6
+    n_action_steps = 4
     n_obs_steps = 8
     num_inference_steps=20
     obs_as_cond=True
@@ -118,7 +118,7 @@ def play(args):
     
         # env.step()
         env.step_action()
-        print('freq: ', 1/(time.perf_counter()-s))
+        # print('freq: ', 1/(time.perf_counter()-s))
         s = time.perf_counter()
 
     def infer_diffusion_callback():

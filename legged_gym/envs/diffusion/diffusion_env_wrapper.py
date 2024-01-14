@@ -53,12 +53,12 @@ class DiffusionEnvWrapper:
         self.idx = self.idx % self.n_action_steps
         if self.idx == 0:
             self.diffusion_action_queues[:] = self.diffusion_action_queues_new[:]
-            print("load new actions")
+            # print("load new actions")
         action_step = self.diffusion_action_queues[:,self.idx,:]
-        print("current idx: ", self.idx, " took action")
+        # print("current idx: ", self.idx, " took action")
 
         obs, _, rews, dones, infos, _, _ = self.env.step(action_step.detach())
-        print("current idx: ", self.idx, " step")
+        # print("current idx: ", self.idx, " step")
 
     
         self.state_history = torch.roll(self.state_history, shifts=-1, dims=1)
@@ -75,9 +75,9 @@ class DiffusionEnvWrapper:
 
         history = self.n_obs_steps
         obs_dict = {'obs': self.state_history[:,1:]}
-        print("new actions start")
+        # print("new actions start")
         action_dict = self.policy.predict_action(obs_dict)
         pred_action = action_dict['action_pred']
        
         self.diffusion_action_queues_new[:] = pred_action[:,history:history+self.n_action_steps,:]
-        print("new actions done")
+        # print("new actions done")

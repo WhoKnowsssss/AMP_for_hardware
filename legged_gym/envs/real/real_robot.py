@@ -78,20 +78,28 @@ class RealMiniCheetah(LeggedRobot):
         self.raw_observation=np.zeros(37)
         rospy.Subscriber("/go1_lowlevel/robot_state", Float32MultiArray, self._cheetah_obs_callback)
         rospy.Subscriber("/go1_lowlevel/status_flag", Float32MultiArray, self._status_callback)
+        rospy.Subscriber("/go1_lowlevel/robot_command", Float32MultiArray, self._command_callback)
         rospy.Subscriber("/joy", Joy, self._status_callback_2)
         self.publisher = rospy.Publisher('/go1_lowlevel/actions', Float32MultiArray, queue_size=1)
         self._state_flag = 0
 
         #self._recv_commands[0:10] = np.array([0.3, 0.0, 0.0, 0.0, np.pi, np.pi, 0, 0.6, 0.12, 0.35])
-        self._recv_commands = np.array([0.5, 0.0, 0.0, ])
+        self._recv_commands = np.array([.5, 0, 0.])
 
     def _cheetah_obs_callback(self, data):
         self.raw_observation[:]=np.array(data.data)
         
     def _status_callback(self, data):
         self._state_flag = np.array(data.data)[0]
+    
+    def _command_callback(self, data):
+        self._recv_commands = np.array(data.data)
 
     def _status_callback_2(self, data):
+        self._recv_commands[0] = data.axes[1] if data.axes[1] > 0 else 0
+        self._recv_commands[1] = data.axes[0]
+        self._recv_commands[2] = data.axes[2]
+
         if data.buttons[1]==1:
             self._state_flag = 1
             print("pressed A!")
