@@ -15,7 +15,7 @@ import queue
 
 from matplotlib import pyplot as plt
 
-from legged_gym.envs.diffusion.diffusion_policy import DiffusionTransformerLowdimPolicy
+from legged_gym.envs.diffusion.bc_lowdim_policy_nsteps import DiffusionTransformerLowdimPolicy
 from legged_gym.envs.diffusion.diffusion_env_wrapper import DiffusionEnvWrapper
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from diffusion_policy.model.common.normalizer import LinearNormalizer
@@ -33,7 +33,7 @@ def add_input(input_queue, stop_event):
         input_queue.put(sys.stdin.read(1))
 
 def play(args):
-    ckpt_name = 'new_go1_latest'
+    ckpt_name = 'tf_bc_nstep'
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing
     env_cfg.env.num_envs = 1
@@ -45,7 +45,7 @@ def play(args):
     env_cfg.domain_rand.push_robots = False
 
 
-    use_trt_acceleration = True
+    use_trt_acceleration = False
 
     num_log_steps = 100
     log_counter = 0
@@ -59,7 +59,7 @@ def play(args):
     obs = env.get_observations()
     # load policy
     if use_trt_acceleration:
-        model = TRTModel("./checkpoints/{}_model.plan".format(ckpt_name))
+        model = TRTModel("./checkpoints/model.plan")
     else:
         # converted_model.pt already contains the trained weights
         # model = torch.load("./checkpoints/converted_model.pt")
@@ -67,7 +67,7 @@ def play(args):
         model.eval()
     
     noise_scheduler = DDPMScheduler(
-        num_train_timesteps=10,
+        num_train_timesteps=1,
         beta_start=0.0001,
         beta_end=0.02,
         beta_schedule="squaredcos_cap_v2",
@@ -79,12 +79,12 @@ def play(args):
     normalizer = LinearNormalizer()
     config_dict, normalizer_ckpt = torch.load("./checkpoints/{}_config_dict.pt".format(ckpt_name))
     normalizer._load_from_state_dict(normalizer_ckpt, 'normalizer.', None, None, None, None, None)
-    horizon = 12
+    horizon = 16
     obs_dim = env.num_obs
     action_dim = env.num_actions
     n_action_steps = 3
     n_obs_steps = 8
-    num_inference_steps=10
+    num_inference_steps=1
     obs_as_cond=True
     pred_action_steps_only=False
     

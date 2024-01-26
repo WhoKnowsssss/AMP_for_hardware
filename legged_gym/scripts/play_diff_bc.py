@@ -38,7 +38,7 @@ from legged_gym.utils import  get_args, export_policy_as_jit, task_registry, Log
 import numpy as np
 import torch
 
-from legged_gym.envs.diffusion.diffusion_policy import DiffusionTransformerLowdimPolicy
+from legged_gym.envs.diffusion.bc_policy import DiffusionTransformerLowdimPolicy
 from legged_gym.envs.diffusion.diffusion_env_wrapper import DiffusionEnvWrapper
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from diffusion_policy.model.common.normalizer import LinearNormalizer
@@ -48,7 +48,6 @@ try:
 except:
     print("Install TRT for real experiments")
 def play(args):
-    ckpt_name = 'new_go1_latest'
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing
     env_cfg.env.num_envs = min(env_cfg.env.num_envs, 1)
@@ -64,7 +63,7 @@ def play(args):
     train_cfg.runner.amp_num_preload_transitions = 1
 
 
-    use_trt_acceleration = True
+    use_trt_acceleration = False
 
 
     # prepare environment
@@ -74,14 +73,16 @@ def play(args):
     # load policy 
     # TODO: change to TRT model
     if use_trt_acceleration:
-        model = TRTModel("./checkpoints/{}_model.plan".format(ckpt_name))
+        # model = TRTModel("./checkpoints/model.plan")
+        model = TRTModel("./checkpoints/go1_baseline_tf.plan")
     else:
         # converted_model.pt already contains the trained weights
-        model = torch.load("./checkpoints/{}_model.pt".format(ckpt_name))
+        # model = torch.load("./checkpoints/converted_model.pt")
+        model = torch.load("./checkpoints/go1_baseline_mlp.pt")
         model.eval()
     # model = None
     noise_scheduler = DDPMScheduler(
-        num_train_timesteps=10,
+        num_train_timesteps=20,
         beta_start=0.0001,
         beta_end=0.02,
         beta_schedule="squaredcos_cap_v2",
@@ -91,15 +92,15 @@ def play(args):
 
     )
     normalizer = LinearNormalizer()
-    config_dict, normalizer_ckpt = torch.load("./checkpoints/{}_config_dict.pt".format(ckpt_name))
-    normalizer._load_from_state_dict(normalizer_ckpt, 'normalizer.', None, None, None, None, None)
-
-    horizon = 12
+    original_ckpt = torch.load("./checkpoints/latest.ckpt")
+    original_ckpt = {k: v for k, v in original_ckpt['state_dicts']['model'].items() if "normalizer" in k}
+    normalizer._load_from_state_dict(original_ckpt, 'normalizer.', None, None, None, None, None)
+    horizon = 8
     obs_dim = env.num_obs
     action_dim = env.num_actions
-    n_action_steps = 3
+    n_action_steps = 1
     n_obs_steps = 8
-    num_inference_steps=10
+    num_inference_steps=20
     obs_as_cond=True
     pred_action_steps_only=False
     

@@ -15,8 +15,8 @@ import queue
 
 from matplotlib import pyplot as plt
 
-from legged_gym.envs.diffusion.diffusion_policy import DiffusionTransformerLowdimPolicy
-from legged_gym.envs.diffusion.diffusion_env_wrapper import DiffusionEnvWrapper
+from legged_gym.envs.diffusion.bc_policy import DiffusionTransformerLowdimPolicy
+from legged_gym.envs.diffusion.bc_env_wrapper import DiffusionEnvWrapper
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from diffusion_policy.model.common.normalizer import LinearNormalizer
 
@@ -33,7 +33,6 @@ def add_input(input_queue, stop_event):
         input_queue.put(sys.stdin.read(1))
 
 def play(args):
-    ckpt_name = 'new_go1_latest'
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing
     env_cfg.env.num_envs = 1
@@ -45,7 +44,7 @@ def play(args):
     env_cfg.domain_rand.push_robots = False
 
 
-    use_trt_acceleration = True
+    use_trt_acceleration = False
 
     num_log_steps = 100
     log_counter = 0
@@ -59,15 +58,15 @@ def play(args):
     obs = env.get_observations()
     # load policy
     if use_trt_acceleration:
-        model = TRTModel("./checkpoints/{}_model.plan".format(ckpt_name))
+        model = TRTModel("./checkpoints/model.plan")
     else:
         # converted_model.pt already contains the trained weights
         # model = torch.load("./checkpoints/converted_model.pt")
-        model = torch.load("./checkpoints/{}_model.pt".format(ckpt_name))
+        model = torch.load("./checkpoints/go1_baseline_mlp.pt").cuda()
         model.eval()
     
     noise_scheduler = DDPMScheduler(
-        num_train_timesteps=10,
+        num_train_timesteps=20,
         beta_start=0.0001,
         beta_end=0.02,
         beta_schedule="squaredcos_cap_v2",
@@ -77,14 +76,16 @@ def play(args):
 
     )
     normalizer = LinearNormalizer()
-    config_dict, normalizer_ckpt = torch.load("./checkpoints/{}_config_dict.pt".format(ckpt_name))
-    normalizer._load_from_state_dict(normalizer_ckpt, 'normalizer.', None, None, None, None, None)
-    horizon = 12
+    original_ckpt = torch.load("./checkpoints/latest.ckpt")
+    original_ckpt = {k: v for k, v in original_ckpt['state_dicts']['model'].items() if "normalizer" in k}
+    normalizer._load_from_state_dict(original_ckpt, 'normalizer.', None, None, None, None, None)
+    normalizer = normalizer.cuda()
+    horizon = 8
     obs_dim = env.num_obs
     action_dim = env.num_actions
-    n_action_steps = 3
+    n_action_steps = 1
     n_obs_steps = 8
-    num_inference_steps=10
+    num_inference_steps=20
     obs_as_cond=True
     pred_action_steps_only=False
     
@@ -116,11 +117,11 @@ def play(args):
         nonlocal env, policy, obs, idx, s, start_idx, global_idx, stand_override
 
         global_idx += 1
+        # print('freq: ', 1/(time.perf_counter()-s))
+        s = time.perf_counter()
     
         # env.step()
         env.step_action()
-        # print('freq: ', 1/(time.perf_counter()-s))
-        s = time.perf_counter()
 
     def infer_diffusion_callback():
         nonlocal env
@@ -151,7 +152,7 @@ def play(args):
     # TODO: set the frequency of diffusion policy here. 
     # The frequency should be 30 / n_action_steps
     action_stop_event = start_call_every_thread(1/30, infer_action_callback) 
-    diff_stop_event = start_call_every_thread(1/50, infer_diffusion_callback) 
+    # diff_stop_event = start_call_every_thread(1/50, infer_diffusion_callback) 
 
 
     

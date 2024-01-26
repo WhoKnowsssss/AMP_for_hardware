@@ -84,10 +84,11 @@ class RealMiniCheetah(LeggedRobot):
         self._state_flag = 0
 
         #self._recv_commands[0:10] = np.array([0.3, 0.0, 0.0, 0.0, np.pi, np.pi, 0, 0.6, 0.12, 0.35])
-        self._recv_commands = np.array([.5, 0, 0.])
+        self._recv_commands = np.array([1.2, 0, -0.])
 
     def _cheetah_obs_callback(self, data):
         self.raw_observation[:]=np.array(data.data)
+        # print(self.raw_observation[7])
         
     def _status_callback(self, data):
         self._state_flag = np.array(data.data)[0]
@@ -96,15 +97,19 @@ class RealMiniCheetah(LeggedRobot):
         self._recv_commands = np.array(data.data)
 
     def _status_callback_2(self, data):
-        self._recv_commands[0] = data.axes[1] if data.axes[1] > 0 else 0
-        self._recv_commands[1] = data.axes[0]
-        self._recv_commands[2] = data.axes[2]
+        # self._recv_commands[0] = data.axes[3] if data.axes[3] > 0 else 0
+        # # self._recv_commands[1] = data.axes[0]
+        # self._recv_commands[2] = data.axes[2]
 
         if data.buttons[1]==1:
             self._state_flag = 1
             print("pressed A!")
         elif data.buttons[2]==1:
             self._state_flag = 0
+        elif data.buttons[3]==1:
+            self._recv_commands = np.array([0.1, 0, 0.])
+        elif data.buttons[0]==1:
+            self._recv_commands = np.array([1., 0, 0.])
 
 
     def _clip_max_change(self):
