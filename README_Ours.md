@@ -1,5 +1,10 @@
 # Run AMP and Diffusion on hardware #
 
+```bash
+pip install setuptools==59.5.0
+```
+
+
 ## Follow the original readme to install this package
 
 ## Hardware Setup
