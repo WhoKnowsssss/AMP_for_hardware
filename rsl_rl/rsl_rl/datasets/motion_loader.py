@@ -14,8 +14,8 @@ from rsl_rl.datasets import motion_util
 
 class AMPLoader:
 
-    POS_SIZE = 3
-    ROT_SIZE = 4
+    POS_SIZE = 3                    # (x, y, z)
+    ROT_SIZE = 4                    # (x, y, z, w)
     JOINT_POS_SIZE = 12
     TAR_TOE_POS_LOCAL_SIZE = 12
     LINEAR_VEL_SIZE = 3
@@ -54,7 +54,7 @@ class AMPLoader:
             data_dir='',
             preload_transitions=False,
             num_preload_transitions=1000000,
-            motion_files=glob.glob('datasets/motion_files2/*'),
+            motion_files=glob.glob('datasets/motion_files/*'),
             ):
         """Expert dataset provides AMP observations from Dog mocap dataset.
 
