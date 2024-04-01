@@ -31,7 +31,7 @@ import glob
 
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
-MOTION_FILES = glob.glob('datasets/mocap_motions/*')
+# MOTION_FILES = glob.glob('datasets/mocap_motions/*')
 # MOTION_FILES = glob.glob('datasets/hopturn/*')
 # MOTION_FILES = glob.glob('datasets/bump/*')
 
@@ -73,8 +73,7 @@ class A1AMPCfg( LeggedRobotCfg ):
         stiffness = {'joint': 50.}  # [N*m/rad]
         damping = {'joint': 1.0}     # [N*m*s/rad]
         # action scale: target angle = actionScale * action + defaultAngle
-        # action_scale = 0.25
-        action_scale = 1
+        action_scale = 0.25
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 6
 
@@ -163,7 +162,7 @@ class A1AMPCfgPPO( LeggedRobotCfgPPO ):
         max_iterations = 500000 # number of policy updates
 
         amp_reward_coef = 2.0
-        amp_motion_files = MOTION_FILES
+        amp_motion_files = glob.glob('datasets/mocap_motions/*')
         amp_num_preload_transitions = 2000000
         amp_task_reward_lerp = 0.3
         amp_discr_hidden_dims = [1024, 512]
