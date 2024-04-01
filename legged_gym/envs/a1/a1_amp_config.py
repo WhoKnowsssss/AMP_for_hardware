@@ -31,13 +31,12 @@ import glob
 
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
-# MOTION_FILES = glob.glob('datasets/mocap_motions/*')
+MOTION_FILES = glob.glob('datasets/mocap_motions/*')
 # MOTION_FILES = glob.glob('datasets/hopturn/*')
-MOTION_FILES = glob.glob('datasets/bump/*')
+# MOTION_FILES = glob.glob('datasets/bump/*')
 
 
 class A1AMPCfg( LeggedRobotCfg ):
-
     class env( LeggedRobotCfg.env ):
         num_envs = 5480
         include_history_steps = None  # Number of steps of history to include.
@@ -69,7 +68,9 @@ class A1AMPCfg( LeggedRobotCfg ):
     class control( LeggedRobotCfg.control ):
         # PD Drive parameters:
         control_type = 'P'
-        stiffness = {'joint': 80.}  # [N*m/rad]
+        # stiffness = {'joint': 80.}  # [N*m/rad]
+        # damping = {'joint': 1.0}     # [N*m*s/rad]
+        stiffness = {'joint': 50.}  # [N*m/rad]
         damping = {'joint': 1.0}     # [N*m*s/rad]
         # action scale: target angle = actionScale * action + defaultAngle
         # action_scale = 0.25
@@ -156,7 +157,7 @@ class A1AMPCfgPPO( LeggedRobotCfgPPO ):
 
     class runner( LeggedRobotCfgPPO.runner ):
         run_name = ''
-        experiment_name = 'a1_amp_bump'
+        experiment_name = 'a1_amp'
         algorithm_class_name = 'AMPPPO'
         policy_class_name = 'ActorCritic'
         max_iterations = 500000 # number of policy updates
@@ -169,4 +170,20 @@ class A1AMPCfgPPO( LeggedRobotCfgPPO ):
 
         min_normalized_std = [0.05, 0.02, 0.05] * 4
 
+class A1AMPCfgPPOBump(A1AMPCfgPPO):
+    class runner( LeggedRobotCfgPPO.runner ):
+        run_name = ''
+        experiment_name = 'a1_amp_bump'
+        algorithm_class_name = 'AMPPPO'
+        policy_class_name = 'ActorCritic'
+        max_iterations = 500000 # number of policy updates
+
+        amp_reward_coef = 2.0
+        amp_motion_files = glob.glob('datasets/bump/*')
+        amp_num_preload_transitions = 2000000
+        amp_task_reward_lerp = 0.3
+        amp_discr_hidden_dims = [1024, 512]
+
+        min_normalized_std = [0.05, 0.02, 0.05] * 4
+    
   
