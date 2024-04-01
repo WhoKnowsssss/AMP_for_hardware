@@ -36,8 +36,8 @@ MOTION_FILES = glob.glob('datasets/mocap_motions/*')
 # MOTION_FILES = glob.glob('datasets/bump/*')
 
 
-class A1AMPCfg( LeggedRobotCfg ):
-    class env( LeggedRobotCfg.env ):
+class A1AMPCfg(LeggedRobotCfg):
+    class env(LeggedRobotCfg.env):
         num_envs = 5480
         include_history_steps = None  # Number of steps of history to include.
         num_observations = 42
@@ -46,7 +46,7 @@ class A1AMPCfg( LeggedRobotCfg ):
         reference_state_initialization_prob = 0.85
         amp_motion_files = MOTION_FILES
 
-    class init_state( LeggedRobotCfg.init_state ):
+    class init_state(LeggedRobotCfg.init_state):
         pos = [0.0, 0.0, 0.42] # x,y,z [m]
         default_joint_angles = { # = target angles [rad] when action = 0.0
             'FL_hip_joint': 0.0,   # [rad]
@@ -65,7 +65,7 @@ class A1AMPCfg( LeggedRobotCfg ):
             'RR_calf_joint': -1.8,    # [rad]
         }
 
-    class control( LeggedRobotCfg.control ):
+    class control(LeggedRobotCfg.control):
         # PD Drive parameters:
         control_type = 'P'
         # stiffness = {'joint': 80.}  # [N*m/rad]
@@ -78,11 +78,11 @@ class A1AMPCfg( LeggedRobotCfg ):
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 6
 
-    class terrain( LeggedRobotCfg.terrain ):
+    class terrain(LeggedRobotCfg.terrain):
         mesh_type = 'plane'
         measure_heights = False
 
-    class asset( LeggedRobotCfg.asset ):
+    class asset(LeggedRobotCfg.asset):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/a1/urdf/a1.urdf'
         foot_name = "foot"
         penalize_contacts_on = ["thigh", "calf"]
@@ -114,10 +114,10 @@ class A1AMPCfg( LeggedRobotCfg ):
             gravity = 0.05
             height_measurements = 0.1
 
-    class rewards( LeggedRobotCfg.rewards ):
+    class rewards(LeggedRobotCfg.rewards):
         soft_dof_pos_limit = 0.9
         base_height_target = 0.25
-        class scales( LeggedRobotCfg.rewards.scales ):
+        class scales(LeggedRobotCfg.rewards.scales):
             termination = 0.0
             tracking_lin_vel = 1.5 * 1. / (.005 * 6)
             tracking_ang_vel = 0.5 * 1. / (.005 * 6)
@@ -147,15 +147,15 @@ class A1AMPCfg( LeggedRobotCfg ):
             ang_vel_yaw = [-1.57, 1.57]    # min max [rad/s]
             heading = [-3.14, 3.14]
 
-class A1AMPCfgPPO( LeggedRobotCfgPPO ):
+class A1AMPCfgPPO(LeggedRobotCfgPPO):
     runner_class_name = 'AMPOnPolicyRunner'
-    class algorithm( LeggedRobotCfgPPO.algorithm ):
+    class algorithm(LeggedRobotCfgPPO.algorithm):
         entropy_coef = 0.01
         amp_replay_buffer_size = 1000000
         num_learning_epochs = 5
         num_mini_batches = 4
 
-    class runner( LeggedRobotCfgPPO.runner ):
+    class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
         experiment_name = 'a1_amp'
         algorithm_class_name = 'AMPPPO'
@@ -170,8 +170,23 @@ class A1AMPCfgPPO( LeggedRobotCfgPPO ):
 
         min_normalized_std = [0.05, 0.02, 0.05] * 4
 
+
+class A1AMPCfgBump(A1AMPCfg):
+    class control(LeggedRobotCfg.control):
+        # PD Drive parameters:
+        control_type = 'P'
+        # stiffness = {'joint': 80.}  # [N*m/rad]
+        # damping = {'joint': 1.0}     # [N*m*s/rad]
+        stiffness = {'joint': 50.}  # [N*m/rad]
+        damping = {'joint': 1.0}     # [N*m*s/rad]
+        # action scale: target angle = actionScale * action + defaultAngle
+        # action_scale = 0.25
+        action_scale = 1
+        # decimation: Number of control action updates @ sim DT per policy DT
+        decimation = 6
+
 class A1AMPCfgPPOBump(A1AMPCfgPPO):
-    class runner( LeggedRobotCfgPPO.runner ):
+    class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
         experiment_name = 'a1_amp_bump'
         algorithm_class_name = 'AMPPPO'
