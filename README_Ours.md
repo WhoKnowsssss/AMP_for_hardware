@@ -1,5 +1,22 @@
 # Run AMP and Diffusion on hardware #
 
+## System Setup
+
+There are two ways of setting up the experiment system. 
+
+First way is to use a computer to connect to Go1, and another computer to run the diffusion model.
+
+Second way is to use the Mini PC to both connect to Go1 and run the diffusion model.
+
+We will introduce the second method.
+
+Make sure that the Mini PC is under `Go1` Wired connection setting:
+
+IP: `192.168.123.29`
+
+Mask: `255.255.255.0`
+
+
 ## Follow the original readme to install this package
 
 ## Hardware Setup
