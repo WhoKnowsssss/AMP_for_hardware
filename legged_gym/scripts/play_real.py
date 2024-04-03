@@ -28,26 +28,23 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from legged_gym import LEGGED_GYM_ROOT_DIR
+import sys
 import os
+import time
 import threading
+import queue
+import signal
 
 import isaacgym
+import numpy as np
+import torch
+from matplotlib import pyplot as plt
+
+from legged_gym import LEGGED_GYM_ROOT_DIR
 from legged_gym.envs import *
 from legged_gym.utils import  get_args, export_policy_as_jit, task_registry, Logger
 
-import numpy as np
-import torch
-import time
-import sys
-import threading
-import queue
 
-from matplotlib import pyplot as plt
-
-
-import signal
-import sys
 def sigint_handler(signum, frame):
 	print("  Ctrl + C Exit!")
 	sys.exit(0)
@@ -111,7 +108,6 @@ def play(args):
     s = time.perf_counter()
     s2 = time.perf_counter()
 
-
     def infer_action_callback():
         nonlocal env, policy, obs, obss, idx, s, start_idx, global_idx, stand_override
 
@@ -127,21 +123,19 @@ def play(args):
     def call_every(seconds, callback, stop_event):
         t1 = time.perf_counter()
         t2 = time.perf_counter()
+        
         while not stop_event.wait(seconds - (t1-t2)):
             t2 = time.perf_counter()
             callback()
-            # print("freq", callback, 1/(time.perf_counter()-t1))
+            print("freq", 1/(time.perf_counter()-t1))
             t1 = time.perf_counter()
-            # print('wait, ', seconds - (t1-t2))
+        
 
     def start_call_every_thread(seconds, callback):
         stop_event = threading.Event()
         thread = threading.Thread(target=call_every, args=(seconds, callback, stop_event), daemon=True)
         thread.start()
         return stop_event
-
-
-
     
     action_stop_event = start_call_every_thread(0.03, infer_action_callback)
     save_flag = LOG_EXP

@@ -31,12 +31,11 @@ import glob
 
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
-# MOTION_FILES = glob.glob('datasets/mocap_motions/*')
-MOTION_FILES = glob.glob('datasets/bump/*')
+MOTION_FILES = glob.glob('datasets/mocap_motions/*')
+# MOTION_FILES = glob.glob('datasets/bump/*')
 
 
 class A1AMPCfg( LeggedRobotCfg ):
-
     class env( LeggedRobotCfg.env ):
         num_envs = 5480
         include_history_steps = None  # Number of steps of history to include.
@@ -153,8 +152,9 @@ class A1AMPCfgPPO( LeggedRobotCfgPPO ):
         num_mini_batches = 4
 
     class runner( LeggedRobotCfgPPO.runner ):
-        run_name = ''
-        experiment_name = 'a1_amp_example'
+        run_name = ""
+        # experiment_name = 'a1_amp_example'
+        experiment_name = "a1_amp"
         algorithm_class_name = 'AMPPPO'
         policy_class_name = 'ActorCritic'
         max_iterations = 500000 # number of policy updates
