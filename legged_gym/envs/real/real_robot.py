@@ -84,7 +84,7 @@ class RealMiniCheetah(LeggedRobot):
         self._state_flag = 0
 
         #self._recv_commands[0:10] = np.array([0.3, 0.0, 0.0, 0.0, np.pi, np.pi, 0, 0.6, 0.12, 0.35])
-        self._recv_commands = np.array([1.2, 0, -0.])
+        self._recv_commands = np.array([0.6, 0, 0.])
 
     def _cheetah_obs_callback(self, data):
         self.raw_observation[:]=np.array(data.data)
@@ -99,7 +99,7 @@ class RealMiniCheetah(LeggedRobot):
     def _status_callback_2(self, data):
         # self._recv_commands[0] = data.axes[3] if data.axes[3] > 0 else 0
         # # self._recv_commands[1] = data.axes[0]
-        # self._recv_commands[2] = data.axes[2]
+        # self._recv_commands[2] = data.axes[0] * 0.5
 
         if data.buttons[1]==1:
             self._state_flag = 1

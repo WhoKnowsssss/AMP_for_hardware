@@ -18,6 +18,8 @@ from matplotlib import pyplot as plt
 from legged_gym.envs.diffusion.diffusion_policy import DiffusionTransformerLowdimPolicy
 from legged_gym.envs.diffusion.diffusion_env_wrapper import DiffusionEnvWrapper
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
+# from diffusers.schedulers.scheduling_ddim import DDIMScheduler
+
 from diffusion_policy.model.common.normalizer import LinearNormalizer
 
 from trt_model import TRTModel
@@ -76,14 +78,29 @@ def play(args):
         prediction_type="epsilon" # or sample
 
     )
+
+
+    # noise_scheduler = DDIMScheduler(
+    #     num_train_timesteps= 10,
+    #     beta_start= 0.0001,
+    #     beta_end= 0.02,
+    #     # beta_schedule is important
+    #     # this is the best we found
+    #     beta_schedule= 'squaredcos_cap_v2',
+    #     clip_sample= True,
+    #     set_alpha_to_one= True,
+    #     steps_offset= 0,
+    #     prediction_type= 'epsilon' # or sample
+
+    # )
     normalizer = LinearNormalizer()
     config_dict, normalizer_ckpt = torch.load("./checkpoints/{}_config_dict.pt".format(ckpt_name))
     normalizer._load_from_state_dict(normalizer_ckpt, 'normalizer.', None, None, None, None, None)
-    horizon = 12
+    horizon = config_dict['horizon']
     obs_dim = env.num_obs
     action_dim = env.num_actions
-    n_action_steps = 3
-    n_obs_steps = 8
+    n_action_steps = 1
+    n_obs_steps = config_dict['n_obs_steps']
     num_inference_steps=10
     obs_as_cond=True
     pred_action_steps_only=False
@@ -128,7 +145,7 @@ def play(args):
             s2 = time.perf_counter()
             env.step_diffusion()
             print('diff time: ', time.perf_counter() - s2)
-            env.step_diffusion_flag = False
+            env.step_diffusion_flag = True
     
     def call_every(seconds, callback, stop_event):
         t1 = time.perf_counter()

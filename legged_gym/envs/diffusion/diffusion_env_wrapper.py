@@ -23,7 +23,7 @@ class DiffusionEnvWrapper:
       
         self.idx = 0
 
-        self.step_diffusion_flag = False
+        self.step_diffusion_flag = True
 
     
     def step(self):
@@ -51,6 +51,7 @@ class DiffusionEnvWrapper:
 
     def step_action(self):
         self.idx = self.idx % self.n_action_steps
+        self.idx = 0
         if self.idx == 0:
             self.diffusion_action_queues[:] = self.diffusion_action_queues_new[:]
             # print("load new actions")

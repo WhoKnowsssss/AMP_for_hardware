@@ -1,5 +1,5 @@
 import sys
-sys.path.append("../Diffusion-Benchmark/")
+# sys.path.append("../Diffusion-Benchmark/")
 
 from datetime import datetime as dt
 from glob import glob
