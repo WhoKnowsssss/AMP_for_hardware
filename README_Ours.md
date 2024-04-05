@@ -1,6 +1,27 @@
 # Run AMP and Diffusion on hardware #
 
 ```bash
+conda create -p ./.conda-env/ python==3.8
+```
+
+```bash
+conda activate ./.conda-env/
+pip install -r requirements.txt
+```
+
+```bash
+cd /rscratch/tk/Documents/isaacgym/python/
+pip install -e .
+```
+
+```bash
+cd ./rsl_rl/
+pip install -e .
+cd ../
+pip install -e .
+```
+
+```bash
 pip install setuptools==59.5.0
 ```
 
