@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -31,13 +31,13 @@ import glob
 
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
-# MOTION_FILES = glob.glob('datasets/mocap_motions/*')
 MOTION_FILES = glob.glob('datasets/mocap_motions_cyberdog2/*')
+# MOTION_FILES = glob.glob('datasets/hopturn/*')
+# MOTION_FILES = glob.glob('datasets/bump/*')
 
 
-class A1AMPCfg( LeggedRobotCfg ):
-
-    class env( LeggedRobotCfg.env ):
+class CyberdogAMPCfg(LeggedRobotCfg):
+    class env(LeggedRobotCfg.env):
         num_envs = 5480
         include_history_steps = None  # Number of steps of history to include.
         num_observations = 42
@@ -45,56 +45,63 @@ class A1AMPCfg( LeggedRobotCfg ):
         reference_state_initialization = True
         reference_state_initialization_prob = 0.85
         amp_motion_files = MOTION_FILES
+        ee_names = ["FL_foot", "FR_foot", "RL_foot", "RR_foot"]
+        get_commands_from_joystick = False
 
-    class init_state( LeggedRobotCfg.init_state ):
-        pos = [0.0, 0.0, 0.25] # x,y,z [m]
+    class init_state(LeggedRobotCfg.init_state):
+        pos = [0.0, 0.0, 0.42] # x,y,z [m]
         default_joint_angles = { # = target angles [rad] when action = 0.0
-                'FL_hip_joint': 0.0,
-                'RL_hip_joint': 0.0,
-                'FR_hip_joint': 0.0,
-                'RR_hip_joint': 0.0,
-                'FL_thigh_joint': -45 / 57.3, # -80 / 57.3, 
-                'RL_thigh_joint': -45 / 57.3, # -80 / 57.3, 
-                'FR_thigh_joint': -45 / 57.3, # -80 / 57.3, 
-                'RR_thigh_joint': -45 / 57.3, # -80 / 57.3, 
-                'FL_calf_joint': 70 / 57.3, # 135 / 57.3,
-                'RL_calf_joint': 70 / 57.3, # 135 / 57.3,
-                'FR_calf_joint': 70 / 57.3, # 135 / 57.3,
-                'RR_calf_joint': 70 / 57.3, # 135 / 57.3,
+            'leg0_FL_a_hip_joint': -0.15,   # [rad]
+            'leg0_FL_c_thigh_joint': 0.55,     # [rad]
+            'leg0_FL_d_calf_joint': -1.5,   # [rad]
+
+            'leg1_FR_a_hip_joint': 0.15,  # [rad]
+            'leg1_FR_c_thigh_joint': 0.55,     # [rad]
+            'leg1_FR_d_calf_joint': -1.5,  # [rad]
+
+            'leg2_RL_a_hip_joint': -0.15,   # [rad]
+            'leg2_RL_c_thigh_joint': 0.7,   # [rad]
+            'leg2_RL_d_calf_joint': -1.5,    # [rad]
+
+            'leg3_RR_a_hip_joint': 0.15,   # [rad]
+            'leg3_RR_c_thigh_joint': 0.7,   # [rad]
+            'leg3_RR_d_calf_joint': -1.5,    # [rad]
         }
 
-    class control( LeggedRobotCfg.control ):
+    class control(LeggedRobotCfg.control):
         # PD Drive parameters:
         control_type = 'P'
-        stiffness = {'joint': 80.}  # [N*m/rad]
+        # stiffness = {'joint': 80.}  # [N*m/rad]
+        # damping = {'joint': 1.0}     # [N*m*s/rad]
+        stiffness = {'joint': 50.}  # [N*m/rad]
         damping = {'joint': 1.0}     # [N*m*s/rad]
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.25
         # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 4
+        decimation = 6
 
-    class terrain( LeggedRobotCfg.terrain ):
+    class terrain(LeggedRobotCfg.terrain):
         mesh_type = 'plane'
         measure_heights = False
 
-    class asset( LeggedRobotCfg.asset ):
+    class asset(LeggedRobotCfg.asset):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/cyberdog2/urdf/cyberdog2_v2.urdf'
         foot_name = "foot"
         penalize_contacts_on = ["thigh", "calf"]
         terminate_after_contacts_on = [
-            "base", "head", "FL_calf", "FR_calf", "RL_calf", "RR_calf",
+            "base", "FL_calf", "FR_calf", "RL_calf", "RR_calf",
             "FL_thigh", "FR_thigh", "RL_thigh", "RR_thigh"]
         self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
-  
+
     class domain_rand:
-        randomize_friction = True
+        randomize_friction = False
         friction_range = [0.25, 1.75]
-        randomize_base_mass = True
+        randomize_base_mass = False
         added_mass_range = [-1., 1.]
-        push_robots = True
+        push_robots = False
         push_interval_s = 15
         max_push_vel_xy = 1.0
-        randomize_gains = True
+        randomize_gains = False
         stiffness_multiplier_range = [0.9, 1.1]
         damping_multiplier_range = [0.9, 1.1]
 
@@ -109,10 +116,10 @@ class A1AMPCfg( LeggedRobotCfg ):
             gravity = 0.05
             height_measurements = 0.1
 
-    class rewards( LeggedRobotCfg.rewards ):
+    class rewards(LeggedRobotCfg.rewards):
         soft_dof_pos_limit = 0.9
         base_height_target = 0.25
-        class scales( LeggedRobotCfg.rewards.scales ):
+        class scales(LeggedRobotCfg.rewards.scales):
             termination = 0.0
             tracking_lin_vel = 1.5 * 1. / (.005 * 6)
             tracking_ang_vel = 0.5 * 1. / (.005 * 6)
@@ -122,10 +129,10 @@ class A1AMPCfg( LeggedRobotCfg ):
             torques = 0.0
             dof_vel = 0.0
             dof_acc = 0.0
-            base_height = 0.0 
+            base_height = 0.0
             feet_air_time =  0.0
             collision = 0.0
-            feet_stumble = 0.0 
+            feet_stumble = 0.0
             action_rate = 0.0
             stand_still = 0.0
             dof_pos_limits = 0.0
@@ -142,27 +149,27 @@ class A1AMPCfg( LeggedRobotCfg ):
             ang_vel_yaw = [-1.57, 1.57]    # min max [rad/s]
             heading = [-3.14, 3.14]
 
-class A1AMPCfgPPO( LeggedRobotCfgPPO ):
+class CyberdogAMPCfgPPO(LeggedRobotCfgPPO):
     runner_class_name = 'AMPOnPolicyRunner'
-    class algorithm( LeggedRobotCfgPPO.algorithm ):
+    class algorithm(LeggedRobotCfgPPO.algorithm):
         entropy_coef = 0.01
         amp_replay_buffer_size = 1000000
         num_learning_epochs = 5
         num_mini_batches = 4
 
-    class runner( LeggedRobotCfgPPO.runner ):
+    class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
-        experiment_name = 'a1_amp_example'
+        experiment_name = 'cyberdog_amp'
         algorithm_class_name = 'AMPPPO'
         policy_class_name = 'ActorCritic'
         max_iterations = 500000 # number of policy updates
 
         amp_reward_coef = 2.0
-        amp_motion_files = MOTION_FILES
+        amp_motion_files = glob.glob('datasets/mocap_motions_cyberdog2/*')
         amp_num_preload_transitions = 2000000
         amp_task_reward_lerp = 0.3
         amp_discr_hidden_dims = [1024, 512]
 
-        min_normalized_std = [0.05, 0.02, 0.05] * 4
+        min_normalized_std = [0.01, 0.01, 0.01] * 4
 
-  
+
