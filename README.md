@@ -15,7 +15,7 @@ Paper: https://drive.google.com/file/d/1kFm79nMmrc0ZIiH0XO8_HV-fj73agheO/view?us
     - `conda create -n amp_hw python==3.8`
     - `conda activate amp_hw`
 2. Install pytorch 1.10 with cuda-11.3:
-    - `pip3 install torch==1.10.0+cu113 torchvision==0.11.1+cu113 tensorboard==2.8.0 pybullet==3.2.1 opencv-python==4.5.5.64 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html`
+    - `pip3 install lxml transformations setuptools==59.5.0 pyquaternion lxml transformations torch==1.10.0+cu113 torchvision==0.11.1+cu113 tensorboard==2.8.0 pybullet==3.2.1 opencv-python==4.5.5.64 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html`
 3. Install Isaac Gym
    - Download and install Isaac Gym Preview 3 (Preview 2 will not work!) from https://developer.nvidia.com/isaac-gym
    - `cd isaacgym/python && pip install -e .`
@@ -23,19 +23,65 @@ Paper: https://drive.google.com/file/d/1kFm79nMmrc0ZIiH0XO8_HV-fj73agheO/view?us
    - For troubleshooting check docs `isaacgym/docs/index.html`)
 4. Install rsl_rl (PPO implementation)
    - Clone this repository
-   -  `cd AMP_for_hardware/rsl_rl && pip install -e .` 
+   -  `cd AMP_for_hardware/rsl_rl && pip install -e .`
 5. Install legged_gym
    - `cd ../ && pip install -e .`
 
+6. Lastly, build and install the interface to Unitree's SDK. The Unitree [repo](https://github.com/unitreerobotics/unitree_legged_sdk) has been releasing new SDK versions. For convenience, we have included the version that we used in `third_party/unitree_legged_sdk`.
+
+   First, make sure the required packages are installed, following Unitree's [guide](https://github.com/unitreerobotics/unitree_legged_sdk). Most nostably, please make sure to install `Boost` and `LCM`:
+
+   ```bash
+   sudo apt install libboost-all-dev liblcm-dev
+   ```
+
+   Then, go to `third_party/unitree_legged_sdk` and create a build folder:
+   ```bash
+   cd third_party/unitree_legged_sdk
+   mkdir build && cd build
+   ```
+
+   Now, build the libraries and move them to the main directory by running:
+   ```bash
+   cmake ..
+   make
+   mv robot_interface* ../../..
+   ```
+
+   And install the pygame library for joystick control:
+   ```bash
+   pip install attrs filterpy pygame gym
+   ```
+
+### Additional Setup for Real Robot
+Follow these steps if you want to run policies on the real robot.
+
+1. **Setup correct permissions for non-sudo user**
+
+   Since the Unitree SDK requires memory locking and high process priority, root priority with `sudo` is usually required to execute commands. To run the SDK without `sudo`, write the following to `/etc/security/limits.d/90-unitree.conf`:
+
+   ```bash
+   <username> soft memlock unlimited
+   <username> hard memlock unlimited
+   <username> soft nice eip
+   <username> hard nice eip
+   ```
+
+   Log out and log back in for the above changes to take effect.
+
+2. **Connect to the real robot**
+
+   Connect from computer to the real robot using an Ethernet cable, and set the computer's IP address to be `192.168.123.24` (or anything in the `192.168.123.X` range that does not collide with the robot's existing IPs). Make sure you can ping/SSH into the robot's TX2 computer (by default it is `unitree@192.168.123.12`).
+
 ### CODE STRUCTURE ###
-1. Each environment is defined by an env file (`legged_robot.py`) and a config file (`legged_robot_config.py`). The config file contains two classes: one conatianing all the environment parameters (`LeggedRobotCfg`) and one for the training parameters (`LeggedRobotCfgPPo`).  
-2. Both env and config classes use inheritance.  
+1. Each environment is defined by an env file (`legged_robot.py`) and a config file (`legged_robot_config.py`). The config file contains two classes: one conatianing all the environment parameters (`LeggedRobotCfg`) and one for the training parameters (`LeggedRobotCfgPPo`).
+2. Both env and config classes use inheritance.
 3. Each non-zero reward scale specified in `cfg` will add a function with a corresponding name to the list of elements which will be summed to get the total reward. The AMP reward parameters are defined in `LeggedRobotCfgPPO`, as well as the path to the reference data.
 4. Tasks must be registered using `task_registry.register(name, EnvClass, EnvConfig, TrainConfig)`. This is done in `envs/__init__.py`, but can also be done from outside of this repository.
-5. Reference data can be found in the `datasets` folder.
+5. Reference data can be found in the `datasets` folder. The `retarget_kp_motions.py` script can be used to convert keypoints to AMP reference trajectories, and `legged_gym/scripts/replay_amp_data.py` can be used to replay the reference trajectories.
 
 ### Usage ###
-1. Train:  
+1. Train:
   ```python legged_gym/scripts/train.py --task=a1_amp``
     -  To run on CPU add following arguments: `--sim_device=cpu`, `--rl_device=cpu` (sim on CPU and rl on GPU is possible).
     -  To run headless (no rendering) add `--headless`.
@@ -51,7 +97,7 @@ Paper: https://drive.google.com/file/d/1kFm79nMmrc0ZIiH0XO8_HV-fj73agheO/view?us
      - --num_envs NUM_ENVS:  Number of environments to create.
      - --seed SEED:  Random seed.
      - --max_iterations MAX_ITERATIONS:  Maximum number of training iterations.
-2. Play a trained policy:  
+2. Play a trained policy:
 ```python legged_gym/scripts/play.py --task=a1_amp```
     - By default the loaded policy is the last model of the last run of the experiment folder.
     - Other runs/model iteration can be selected by setting `load_run` and `checkpoint` in the train config.
@@ -60,9 +106,9 @@ Paper: https://drive.google.com/file/d/1kFm79nMmrc0ZIiH0XO8_HV-fj73agheO/view?us
     - This saves a video of the in the base directory.
 
 ### Adding a new environment ###
-The base environment `legged_robot` implements a rough terrain locomotion task. The corresponding cfg does not specify a robot asset (URDF/ MJCF) and no reward scales. 
+The base environment `legged_robot` implements a rough terrain locomotion task. The corresponding cfg does not specify a robot asset (URDF/ MJCF) and no reward scales.
 
-1. Add a new folder to `envs/` with `'<your_env>_config.py`, which inherit from an existing environment cfgs  
+1. Add a new folder to `envs/` with `'<your_env>_config.py`, which inherit from an existing environment cfgs
 2. If adding a new robot:
     - Add the corresponding assets to `resourses/`.
     - In `cfg` set the asset path, define body names, default_joint_positions and PD gains. Specify the desired `train_cfg` and the name of the environment (python class).
