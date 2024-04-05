@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -31,7 +31,7 @@ import glob
 
 from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
-# MOTION_FILES = glob.glob('datasets/mocap_motions/*')
+MOTION_FILES = glob.glob('datasets/mocap_motions/*')
 # MOTION_FILES = glob.glob('datasets/hopturn/*')
 # MOTION_FILES = glob.glob('datasets/bump/*')
 
@@ -45,24 +45,27 @@ class A1AMPCfg(LeggedRobotCfg):
         reference_state_initialization = True
         reference_state_initialization_prob = 0.85
         amp_motion_files = MOTION_FILES
+        ee_names = ["FL_foot", "FR_foot", "RL_foot", "RR_foot"]
+        get_commands_from_joystick = False
 
     class init_state(LeggedRobotCfg.init_state):
         pos = [0.0, 0.0, 0.42] # x,y,z [m]
         default_joint_angles = { # = target angles [rad] when action = 0.0
-            'FL_hip_joint': 0.0,   # [rad]
-            'RL_hip_joint': 0.0,   # [rad]
-            'FR_hip_joint': 0.0 ,  # [rad]
-            'RR_hip_joint': 0.0,   # [rad]
+            'leg0_FL_a_hip_joint': -0.15,   # [rad]
+            'leg0_FL_c_thigh_joint': 0.55,     # [rad]
+            'leg0_FL_d_calf_joint': -1.5,   # [rad]
 
-            'FL_thigh_joint': 0.9,     # [rad]
-            'RL_thigh_joint': 0.9,   # [rad]
-            'FR_thigh_joint': 0.9,     # [rad]
-            'RR_thigh_joint': 0.9,   # [rad]
+            'leg1_FR_a_hip_joint': 0.15,  # [rad]
+            'leg1_FR_c_thigh_joint': 0.55,     # [rad]
+            'leg1_FR_d_calf_joint': -1.5,  # [rad]
 
-            'FL_calf_joint': -1.8,   # [rad]
-            'RL_calf_joint': -1.8,    # [rad]
-            'FR_calf_joint': -1.8,  # [rad]
-            'RR_calf_joint': -1.8,    # [rad]
+            'leg2_RL_a_hip_joint': -0.15,   # [rad]
+            'leg2_RL_c_thigh_joint': 0.7,   # [rad]
+            'leg2_RL_d_calf_joint': -1.5,    # [rad]
+
+            'leg3_RR_a_hip_joint': 0.15,   # [rad]
+            'leg3_RR_c_thigh_joint': 0.7,   # [rad]
+            'leg3_RR_d_calf_joint': -1.5,    # [rad]
         }
 
     class control(LeggedRobotCfg.control):
@@ -89,7 +92,7 @@ class A1AMPCfg(LeggedRobotCfg):
             "base", "FL_calf", "FR_calf", "RL_calf", "RR_calf",
             "FL_thigh", "FR_thigh", "RL_thigh", "RR_thigh"]
         self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
-  
+
     class domain_rand:
         randomize_friction = False
         friction_range = [0.25, 1.75]
@@ -126,10 +129,10 @@ class A1AMPCfg(LeggedRobotCfg):
             torques = 0.0
             dof_vel = 0.0
             dof_acc = 0.0
-            base_height = 0.0 
+            base_height = 0.0
             feet_air_time =  0.0
             collision = 0.0
-            feet_stumble = 0.0 
+            feet_stumble = 0.0
             action_rate = 0.0
             stand_still = 0.0
             dof_pos_limits = 0.0
@@ -167,37 +170,6 @@ class A1AMPCfgPPO(LeggedRobotCfgPPO):
         amp_task_reward_lerp = 0.3
         amp_discr_hidden_dims = [1024, 512]
 
-        min_normalized_std = [0.05, 0.02, 0.05] * 4
+        min_normalized_std = [0.01, 0.01, 0.01] * 4
 
 
-class A1AMPCfgBump(A1AMPCfg):
-    class control(LeggedRobotCfg.control):
-        # PD Drive parameters:
-        control_type = 'P'
-        # stiffness = {'joint': 80.}  # [N*m/rad]
-        # damping = {'joint': 1.0}     # [N*m*s/rad]
-        stiffness = {'joint': 50.}  # [N*m/rad]
-        damping = {'joint': 1.0}     # [N*m*s/rad]
-        # action scale: target angle = actionScale * action + defaultAngle
-        # action_scale = 0.25
-        action_scale = 1
-        # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 6
-
-class A1AMPCfgPPOBump(A1AMPCfgPPO):
-    class runner(LeggedRobotCfgPPO.runner):
-        run_name = ''
-        experiment_name = 'a1_amp_bump'
-        algorithm_class_name = 'AMPPPO'
-        policy_class_name = 'ActorCritic'
-        max_iterations = 500000 # number of policy updates
-
-        amp_reward_coef = 2.0
-        amp_motion_files = glob.glob('datasets/bump/*')
-        amp_num_preload_transitions = 2000000
-        amp_task_reward_lerp = 0.3
-        amp_discr_hidden_dims = [1024, 512]
-
-        min_normalized_std = [0.05, 0.02, 0.05] * 4
-    
-  

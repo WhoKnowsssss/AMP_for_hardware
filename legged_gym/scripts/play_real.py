@@ -63,17 +63,27 @@ def add_input(input_queue, stop_event):
     while not stop_event.is_set():
         input_queue.put(sys.stdin.read(1))
 
+
+_convert_obs_dict_to_tensor = lambda obs, device: torch.tensor(np.concatenate([
+        obs["ProjectedGravity"], obs["FakeCommand"], obs["MotorAngle"],
+        obs["MotorVelocity"], obs["LastAction"]]), device=device).float()
+
+
 def play(args):
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing
+    # env_cfg.env.num_envs = min(env_cfg.env.num_envs, 1)
     env_cfg.env.num_envs = 1
-    env_cfg.terrain.num_rows = 1
-    env_cfg.terrain.num_cols = 1
+    # env_cfg.env.get_commands_from_joystick = False
+    env_cfg.terrain.num_rows = 1    # 5
+    env_cfg.terrain.num_cols = 1    # 5
     env_cfg.terrain.curriculum = False
     env_cfg.noise.add_noise = False
     env_cfg.domain_rand.randomize_friction = False
     env_cfg.domain_rand.push_robots = False
-
+    # env_cfg.domain_rand.randomize_gains = False
+    # env_cfg.domain_rand.randomize_base_mass = False
+    
     num_log_steps = 100
     log_counter = 0
     obs_log = []
