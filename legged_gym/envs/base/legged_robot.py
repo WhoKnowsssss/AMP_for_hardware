@@ -79,7 +79,7 @@ class LeggedRobot(BaseTask):
             self.chain_ee.append(
                 pk.build_serial_chain_from_urdf(
                     open(self.cfg.asset.file.format(
-                            LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)).read(),
+                            LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), "rb").read(),
                                 ee_name).to(device=sim_device))
 
         self._get_commands_from_joystick = self.cfg.env.get_commands_from_joystick
