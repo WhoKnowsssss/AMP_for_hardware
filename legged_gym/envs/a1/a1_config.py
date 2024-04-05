@@ -40,24 +40,26 @@ class A1RoughCfg( LeggedRobotCfg ):
         reference_state_initialization = False
         # reference_state_initialization_prob = 0.85
         # amp_motion_files = MOTION_FILES
+        ee_names = ["FL_foot", "FR_foot", "RL_foot", "RR_foot"]
 
     class init_state( LeggedRobotCfg.init_state ):
         pos = [0.0, 0.0, 0.42] # x,y,z [m]
         default_joint_angles = { # = target angles [rad] when action = 0.0
-            'FL_hip_joint': 0.1,   # [rad]
-            'RL_hip_joint': 0.1,   # [rad]
-            'FR_hip_joint': -0.1 ,  # [rad]
-            'RR_hip_joint': -0.1,   # [rad]
+            'leg0_FL_a_hip_joint': 0.1,   # [rad]
+            'leg0_FL_c_thigh_joint': 0.8,     # [rad]
+            'leg0_FL_d_calf_joint': -1.5,   # [rad]
 
-            'FL_thigh_joint': 0.8,     # [rad]
-            'RL_thigh_joint': 1.,   # [rad]
-            'FR_thigh_joint': 0.8,     # [rad]
-            'RR_thigh_joint': 1.,   # [rad]
+            'leg1_FR_a_hip_joint': -0.1,  # [rad]
+            'leg1_FR_c_thigh_joint': 0.8,     # [rad]
+            'leg1_FR_d_calf_joint': -1.5,  # [rad]
 
-            'FL_calf_joint': -1.5,   # [rad]
-            'RL_calf_joint': -1.5,    # [rad]
-            'FR_calf_joint': -1.5,  # [rad]
-            'RR_calf_joint': -1.5,    # [rad]
+            'leg2_RL_a_hip_joint': 0.1,   # [rad]
+            'leg2_RL_c_thigh_joint': 1.0,   # [rad]
+            'leg2_RL_d_calf_joint': -1.5,    # [rad]
+            
+            'leg3_RR_a_hip_joint': -0.1,   # [rad]
+            'leg3_RR_c_thigh_joint': 1.0,   # [rad]
+            'leg3_RR_d_calf_joint': -1.5,    # [rad]
         }
 
     class control( LeggedRobotCfg.control ):
