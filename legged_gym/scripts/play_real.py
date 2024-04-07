@@ -28,30 +28,27 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from legged_gym import LEGGED_GYM_ROOT_DIR
+import sys
 import os
 import threading
+import time
+import queue
 
 import isaacgym
+import numpy as np
+import torch
+from matplotlib import pyplot as plt
+
+from legged_gym import LEGGED_GYM_ROOT_DIR
 from legged_gym.envs import *
 from legged_gym.utils import  get_args, export_policy_as_jit, task_registry, Logger
 
-import numpy as np
-import torch
-import time
-import sys
-import threading
-import queue
 
-from matplotlib import pyplot as plt
-
-
-import signal
-import sys
 def sigint_handler(signum, frame):
 	print("  Ctrl + C Exit!")
 	sys.exit(0)
-signal.signal(signal.SIGINT, sigint_handler) 
+# signal.signal(signal.SIGINT, sigint_handler) 
+
 
 class logger_config:
     EXPORT_POLICY=False
@@ -153,12 +150,19 @@ def play(args):
 
 
     
-    action_stop_event = start_call_every_thread(0.03, infer_action_callback)
+    action_stop_event = start_call_every_thread(0.02, infer_action_callback)
     save_flag = LOG_EXP
 
     # stop_event.set()
-    while True:
-        time.sleep(100)
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Ctrl+C pressed")
+        
+        env.is_running.set()
+
+        print("Exiting...")
 
 if __name__ == '__main__':
     EXPORT_POLICY = False
