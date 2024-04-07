@@ -646,8 +646,12 @@ class Object(YamlReflection):
 
   @classmethod
   def from_xml_string(cls, xml_string):
-    node = etree.fromstring(xml_string)
+    try:
+      node = etree.fromstring(xml_string)
+    except:
+      node = etree.fromstring(xml_string.encode('utf-8'))
     path = Path(cls.XML_REFL.tag, tree=etree.ElementTree(node))
+
     return cls.from_xml(node, path)
 
   @classmethod
