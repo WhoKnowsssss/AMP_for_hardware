@@ -118,7 +118,14 @@ class LeggedRobot(BaseTask):
         self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
         # step physics and render each frame
         self.render()
+        print(np.round(self.actions.numpy()[0], decimals=2))
+        actions_scaled = self.actions * self.cfg.control.action_scale
+
+        print(np.round((actions_scaled + self.default_dof_pos).numpy()[0], decimals=2))
+        print('\n')
+
         for _ in range(self.cfg.control.decimation):
+
             self.torques = self._compute_torques(self.actions).view(self.torques.shape)
             self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
             self.gym.simulate(self.sim)
@@ -477,7 +484,6 @@ class LeggedRobot(BaseTask):
         else:
             p_gains = self.p_gains
             d_gains = self.d_gains
-
         if control_type=="P":
             torques = p_gains*(actions_scaled + self.default_dof_pos - self.dof_pos) - d_gains*self.dof_vel
         elif control_type=="V":
@@ -496,7 +502,7 @@ class LeggedRobot(BaseTask):
         Args:
             env_ids (List[int]): Environemnt ids
         """
-        self.dof_pos[env_ids] = self.default_dof_pos * torch_rand_float(0.5, 1.5, (len(env_ids), self.num_dof), device=self.device)
+        self.dof_pos[env_ids] = self.default_dof_pos #* torch_rand_float(0.5, 1.5, (len(env_ids), self.num_dof), device=self.device)
         self.dof_vel[env_ids] = 0.
 
         env_ids_int32 = env_ids.to(dtype=torch.int32)

@@ -161,10 +161,10 @@ class LeggedRobotCfg(BaseConfig):
             lin_vel = 2.0
             ang_vel = 0.25
             dof_pos = 1.0
-            dof_vel = 0.05
+            dof_vel = 0. # HACK
             height_measurements = 5.0
         clip_observations = 100.
-        clip_actions = 100.
+        clip_actions = 10.
 
     class noise:
         add_noise = True

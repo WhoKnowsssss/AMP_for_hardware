@@ -41,14 +41,14 @@ class A1AMPCfg(LeggedRobotCfg):
         include_history_steps = None  # Number of steps of history to include.
         num_observations = 42
         num_privileged_obs = 48
-        reference_state_initialization = True
+        reference_state_initialization = False
         reference_state_initialization_prob = 0.85
         amp_motion_files = MOTION_FILES
         ee_names = ["FL_foot", "FR_foot", "RL_foot", "RR_foot"]
         get_commands_from_joystick = False
 
     class init_state( LeggedRobotCfg.init_state ):
-        pos = [0.0, 0.0, 0.25] # x,y,z [m]
+        pos = [0.0, 0.0, .25] # x,y,z [m]
         default_joint_angles = { # = target angles [rad] when action = 0.0
                 'FL_hip_joint': 0.0,
                 'RL_hip_joint': 0.0,
@@ -67,8 +67,8 @@ class A1AMPCfg(LeggedRobotCfg):
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
         control_type = 'P'
-        stiffness = {'joint': 80.}  # [N*m/rad]
-        damping = {'joint': 1.0}     # [N*m*s/rad]
+        stiffness = {'joint': 30.}  # [N*m/rad]
+        damping = {'joint': 3.0}     # [N*m*s/rad]
         # stiffness = {'joint': 30.}  # [N*m/rad]
         # damping = {'joint': 3.0}     # [N*m*s/rad]
         # action scale: target angle = actionScale * action + defaultAngle
@@ -103,7 +103,7 @@ class A1AMPCfg(LeggedRobotCfg):
 
     class noise:
         add_noise = True
-        noise_level = 1.0 # scales other values
+        noise_level = 10.0 # scales other values
         class noise_scales:
             dof_pos = 0.03
             dof_vel = 1.5
@@ -140,9 +140,9 @@ class A1AMPCfg(LeggedRobotCfg):
         resampling_time = 10. # time before command are changed[s]
         heading_command = False # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [-0.7, 1.5] # min max [m/s]
-            lin_vel_y = [-0.3, 0.3]   # min max [m/s]
-            ang_vel_yaw = [-1.57, 1.57]    # min max [rad/s]
+            lin_vel_x = [0.5, 0.5] # min max [m/s]
+            lin_vel_y = [-0., 0.]   # min max [m/s]
+            ang_vel_yaw = [-0, 0]    # min max [rad/s]
             heading = [-3.14, 3.14]
 
 class A1AMPCfgPPO(LeggedRobotCfgPPO):
@@ -155,7 +155,7 @@ class A1AMPCfgPPO(LeggedRobotCfgPPO):
 
     class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
-        experiment_name = 'a1_amp_example'
+        experiment_name = 'cyberdog2'
         algorithm_class_name = 'AMPPPO'
         policy_class_name = 'ActorCritic'
         max_iterations = 500000 # number of policy updates

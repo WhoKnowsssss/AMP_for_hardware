@@ -33,7 +33,6 @@ from legged_gym.envs.a1.a1_config import A1RoughCfg, A1RoughCfgPPO
 from .base.legged_robot import LeggedRobot
 from .a1.a1_config import A1RoughCfg, A1RoughCfgPPO
 from .a1.a1_amp_config import A1AMPCfg, A1AMPCfgPPO
-from .real.real_robot import RealMiniCheetah
 from .real.real_cyberdog2 import RealCyberDog2
 
 
