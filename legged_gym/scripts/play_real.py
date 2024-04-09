@@ -66,8 +66,14 @@ def add_input(input_queue, stop_event):
 _convert_obs_dict_to_tensor = lambda obs, device: torch.tensor(np.concatenate([
         obs["ProjectedGravity"], obs["FakeCommand"], obs["MotorAngle"],
         obs["MotorVelocity"], obs["LastAction"]]), device=device).float()
-
-
+import pickle
+loaded_actions = []
+with open('actions.pkl', 'rb') as f:
+    while True:
+        try:
+            loaded_actions.append(pickle.load(f))
+        except EOFError:
+            break
 def play(args):
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing
@@ -83,13 +89,6 @@ def play(args):
     # env_cfg.domain_rand.randomize_gains = False
     # env_cfg.domain_rand.randomize_base_mass = False
     
-    num_log_steps = 100
-    log_counter = 0
-    obs_log = []
-    timestr = time.strftime("%m%d-%H%M%S")
-    logdir = f'experiement_log_{timestr}'
-    # os.mkdir(logdir)
-
     # prepare environment
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
     obs = env.get_observations()
@@ -98,72 +97,40 @@ def play(args):
     ppo_runner, train_cfg = task_registry.make_alg_runner(env=env, name=args.task, args=args, train_cfg=train_cfg)
     policy = ppo_runner.get_inference_policy(device=env.device)
     
-    # export policy as a jit module (used to run it from C++)
-    if EXPORT_POLICY:
-        path = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name, 'exported', 'policies')
-        export_policy_as_jit(ppo_runner.alg.actor_critic, path)
-        print('Exported policy as jit script to: ', path)
+    tx_buffer = np.zeros((12, ), dtype=np.float32)
 
-    input_queue = queue.Queue()
-    stop_input = threading.Event()
-    input_thread = threading.Thread(target=add_input, args=(input_queue,stop_input))
-    input_thread.daemon = True
-    input_thread.start()
+    def txHandler():
+        nonlocal tx_buffer
+        # tx_buffer[0] = (2 * time.time()) % 1
+        # env.tx_udp.send(tx_buffer)
+        # print("TX message:", tx_buffer[0])
+        with torch.no_grad():
+            rxx = env.rx_udp.obs[33]
+            if (np.abs(tx_buffer[0] - rxx) > 0.0001):
+                print("diff")
+            # print("RX message", env.rx_udp.obs[33])
+            obs = env._compute_real_observations(tx_buffer)
+            tx_buffer = policy(obs.detach()).detach().cpu().numpy()[0]
+            # tx_buffer[0] = (2 * time.time()) % 1
+            # print("TX message:", tx_buffer[0])
 
-    obss = np.zeros((6660, 344))
-    filter_obss = np.zeros((6660, 12))
-    idx = 0
-    global_idx = 0
-    start_idx = np.inf
-    stand_override = False
+            # actions = torch.tensor(loaded_actions[global_idx]).float()
+            env.tx_udp.send(tx_buffer)
 
-    print("running")
+    class IntervalTimer(threading.Timer):
+        def run(self):
+            while not self.finished.wait(self.interval):
+                self.function(*self.args, **self.kwargs)
 
-    s = time.perf_counter()
-    s2 = time.perf_counter()
+    tx_timer = IntervalTimer(1 / 50, txHandler)
 
-    def infer_action_callback():
-        nonlocal env, policy, obs, obss, idx, s, start_idx, global_idx, stand_override
-
-        global_idx += 1
-
-        if not stand_override:
-            with torch.no_grad():
-                actions = policy(obs.detach())
-                obs, _, rews, dones, infos, _, _ = env.step(actions.detach())
-
-        s = time.perf_counter()    
-
-    def call_every(seconds, callback, stop_event):
-        t1 = time.perf_counter()
-        t2 = time.perf_counter()
-        
-        while not stop_event.wait(seconds - (t1-t2)):
-            t2 = time.perf_counter()
-            callback()
-            # print("freq", 1/(time.perf_counter()-t1))
-            t1 = time.perf_counter()
-        
-
-    def start_call_every_thread(seconds, callback):
-        stop_event = threading.Event()
-        thread = threading.Thread(target=call_every, args=(seconds, callback, stop_event), daemon=True)
-        thread.start()
-        return stop_event
+    tx_timer.start()
     
-    action_stop_event = start_call_every_thread(0.02, infer_action_callback)
-    save_flag = LOG_EXP
-
-    # stop_event.set()
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("Ctrl+C pressed")
-        
-        env.is_running.set()
-
-        print("Exiting...")
+        pass
 
 if __name__ == '__main__':
     EXPORT_POLICY = False

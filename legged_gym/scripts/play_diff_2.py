@@ -48,7 +48,7 @@ try:
 except:
     print("Install TRT for real experiments")
 def play(args):
-    ckpt_name = 'tf_bc_nstep'
+    ckpt_name = 'converted'
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing
     env_cfg.env.num_envs = min(env_cfg.env.num_envs, 1)
