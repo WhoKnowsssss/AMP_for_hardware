@@ -51,6 +51,7 @@ import legged_gym.utils.kinematics.urdf as pk
 from .legged_robot_config import LeggedRobotCfg
 from rsl_rl.datasets.motion_loader import AMPLoader
 
+from legged_gym.utils import ActionFilterButter
 
 class LeggedRobot(BaseTask):
     def __init__(self, cfg: LeggedRobotCfg, sim_params, physics_engine, sim_device, headless):
@@ -97,7 +98,15 @@ class LeggedRobot(BaseTask):
 
         if self.cfg.env.reference_state_initialization:
             self.amp_loader = AMPLoader(motion_files=self.cfg.env.amp_motion_files, device=self.device, time_between_frames=self.dt)
+        self.action_filter = ActionFilterButter(lowcut=None, highcut=[6], sampling_rate=1./self.dt,order=2,num_joints=12, device=self.device, num_envs=self.num_envs)
 
+    def getFilteredAction(self, actions: torch.Tensor):
+        if self.action_filter is not None:
+            self.filtered_actions = self.action_filter.filter(actions.clone())
+        else:
+            self.filtered_actions = actions.clone()
+        return self.filtered_actions
+        
     def get_diffusion_action(self):
         return self.actions
     def get_diffusion_observation(self):

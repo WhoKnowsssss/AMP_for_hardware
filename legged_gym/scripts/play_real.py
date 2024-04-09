@@ -43,7 +43,7 @@ from matplotlib import pyplot as plt
 
 from legged_gym import LEGGED_GYM_ROOT_DIR
 from legged_gym.envs import *
-from legged_gym.utils import  get_args, export_policy_as_jit, task_registry, Logger
+from legged_gym.utils import  get_args, task_registry, IntervalTimer
 
 def sigint_handler(signum, frame):
 	print("  Ctrl + C Exit!")
@@ -99,26 +99,18 @@ def play(args):
 
     def txHandler():
         nonlocal tx_buffer
-        # tx_buffer[0] = (2 * time.time()) % 1
-        # env.tx_udp.send(tx_buffer)
-        # print("TX message:", tx_buffer[0])
         with torch.no_grad():
             rxx = env.rx_udp.obs[33]
             if (np.abs(tx_buffer[0] - rxx) > 0.0001):
                 print("diff")
-            # print("RX message", env.rx_udp.obs[33])
+            
             obs = env._compute_real_observations(tx_buffer)
             tx_buffer = policy(obs.detach()).detach().cpu().numpy()[0]
-            # tx_buffer[0] = (2 * time.time()) % 1
             # print("TX message:", tx_buffer[0])
 
             # actions = torch.tensor(loaded_actions[global_idx]).float()
             env.tx_udp.send(tx_buffer)
 
-    class IntervalTimer(threading.Timer):
-        def run(self):
-            while not self.finished.wait(self.interval):
-                self.function(*self.args, **self.kwargs)
 
     tx_timer = IntervalTimer(1 / 50, txHandler)
 

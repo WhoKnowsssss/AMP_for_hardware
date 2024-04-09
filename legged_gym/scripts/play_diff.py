@@ -101,7 +101,7 @@ def play(args):
     horizon = config_dict['horizon']
     obs_dim = 45
     action_dim = env.num_actions
-    n_action_steps = 3
+    n_action_steps = 2
     num_inference_steps=config_dict['num_inference_steps']
     n_obs_steps = config_dict['n_obs_steps']
     obs_as_cond=True

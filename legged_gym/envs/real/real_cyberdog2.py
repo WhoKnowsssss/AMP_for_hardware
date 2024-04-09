@@ -40,6 +40,7 @@ import torch
 from cc.udp import UDPTx, UDPRx
 
 from legged_gym.envs.base.legged_robot import LeggedRobot
+from legged_gym.utils import ActionFilterButter
 # from torch.tensor import Tensor
 
 import time
@@ -111,7 +112,6 @@ class RealCyberDog2(LeggedRobot):
             exit()
         self.tx_udp = UDPTx((ROBOT_IP, ROBOT_PORT))
 
-
         self.rx_buffer = None
         self.tx_buffer = np.zeros((N_ACTIONS, ), dtype=np.float32)
 
@@ -120,7 +120,7 @@ class RealCyberDog2(LeggedRobot):
         self._state_flag = 0
 
         #self._recv_commands[0:10] = np.array([0.3, 0.0, 0.0, 0.0, np.pi, np.pi, 0, 0.6, 0.12, 0.35])
-        self._recv_commands = np.array([0.5, 0.0, 0.0, ])
+        self._recv_commands = np.array([0.7, 0.0, 0.0, ])
 
     def _cheetah_obs_callback(self, data):
         # self.raw_observation[:]=np.array(data.data)
@@ -155,7 +155,7 @@ class RealCyberDog2(LeggedRobot):
         """
         if len(env_ids) == 0:
             return
-        
+
     def step(self, actions):
         # # self.filter(actions)  TODO disable filter?
         # # clip
@@ -180,13 +180,14 @@ class RealCyberDog2(LeggedRobot):
 
         return self.obs_buf, self.privileged_obs_buf, self.rew_buf, self.reset_buf, self.extras, None, None
 
-    def _compute_real_observations(self, actions):
+    def _compute_real_observations(self):
         used_obs = np.array(self.rx_udp.obs).reshape(1, -1)
         used_obs[:, 6:9] = self._recv_commands[:3] * self.commands_scale.cpu().numpy()
 
         # used_obs = np.concatenate([used_obs[:, :3], used_obs[:, 6:-12], actions[None, :]], axis=-1) # HACK for current AMP
-        used_obs = np.concatenate([used_obs[:, :3], used_obs[:, 6:]], axis=-1) # HACK for current AMP
-        self.obs_buf = torch.from_numpy(used_obs).float().to(self.device)   
+        # used_obs = np.concatenate([used_obs[:, :3], used_obs[:, 6:]], axis=-1) # HACK for current AMP
+        # used_obs = np.concatenate([used_obs[:, :3], actions], axis=-1)
+        self.obs_buf = torch.from_numpy(used_obs).float().to(self.device)
 
         return self.obs_buf
 
