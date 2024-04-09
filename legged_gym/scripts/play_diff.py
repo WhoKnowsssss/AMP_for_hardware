@@ -28,29 +28,23 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from legged_gym import LEGGED_GYM_ROOT_DIR
-import os
-
-import isaacgym
-from legged_gym.envs import *
-from legged_gym.utils import  get_args, export_policy_as_jit, task_registry, Logger
-
 import numpy as np
+import isaacgym
 import torch
 
+from legged_gym.envs import *
+from legged_gym.utils import get_args, task_registry, loadModel
 from legged_gym.envs.diffusion.diffusion_policy import DiffusionTransformerLowdimPolicy
 from legged_gym.envs.diffusion.diffusion_env_wrapper import DiffusionEnvWrapper
-# from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
+from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 
 # from diffusers.schedulers.scheduling_ddim import DDIMScheduler
 from diffusion_policy.model.common.normalizer import LinearNormalizer
 
-# try:
-from legged_gym.scripts.trt_model import TRTModel
-# except:
-#     print("Install TRT for real experiments")
+
 def play(args):
-    ckpt_name = 'norhc'
+    normalizer_ckpt_name = "./checkpoints/converted_config_dict.pt"
+
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing
     env_cfg.env.num_envs = min(env_cfg.env.num_envs, 1)
@@ -66,24 +60,19 @@ def play(args):
     train_cfg.runner.amp_num_preload_transitions = 1
 
 
-    use_trt_acceleration = True
 
 
     # prepare environment
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
     _, _ = env.reset()
     obs = env.get_observations()
-    # load policy 
-    # TODO: change to TRT model
-    if use_trt_acceleration:
-        model = TRTModel("./checkpoints/{}_model.plan".format(ckpt_name))
-    else:
-        # converted_model.pt already contains the trained weights
-        model = torch.load("./checkpoints/{}_model.pt".format(ckpt_name))
-        model.eval()
-    # model = None
+    
+    # load policy
+    model = loadModel(args.checkpoint)
+
+    num_inference_steps = 10
     noise_scheduler = DDPMScheduler(
-        num_train_timesteps=10,
+        num_train_timesteps=num_inference_steps,
         beta_start=0.0001,
         beta_end=0.02,
         beta_schedule="squaredcos_cap_v2",
@@ -107,19 +96,16 @@ def play(args):
 
     # )
     normalizer = LinearNormalizer()
-    config_dict, normalizer_ckpt = torch.load("./checkpoints/{}_config_dict.pt".format(ckpt_name))
+    config_dict, normalizer_ckpt = torch.load(normalizer_ckpt_name)
     normalizer._load_from_state_dict(normalizer_ckpt, 'normalizer.', None, None, None, None, None)
-
-
-    horizon = 9
-    obs_dim = env.num_obs
+    horizon = config_dict['horizon']
+    obs_dim = 45
     action_dim = env.num_actions
-    n_action_steps = 1
-    n_obs_steps = 8
-    num_inference_steps=10
+    n_action_steps = 3
+    num_inference_steps=config_dict['num_inference_steps']
+    n_obs_steps = config_dict['n_obs_steps']
     obs_as_cond=True
     pred_action_steps_only=False
-    
     policy = DiffusionTransformerLowdimPolicy(
         model=model,
         noise_scheduler=noise_scheduler,

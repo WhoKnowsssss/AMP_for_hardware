@@ -81,7 +81,7 @@ def play(args):
     normalizer._load_from_state_dict(original_ckpt, 'normalizer.', None, None, None, None, None)
     normalizer = normalizer.cuda()
     horizon = 8
-    obs_dim = env.num_obs
+    obs_dim = 45
     action_dim = env.num_actions
     n_action_steps = 1
     n_obs_steps = 8

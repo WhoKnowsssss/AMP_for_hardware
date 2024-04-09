@@ -96,7 +96,7 @@ def play(args):
     original_ckpt = {k: v for k, v in original_ckpt['state_dicts']['model'].items() if "normalizer" in k}
     normalizer._load_from_state_dict(original_ckpt, 'normalizer.', None, None, None, None, None)
     horizon = 8
-    obs_dim = env.num_obs
+    obs_dim = 45
     action_dim = env.num_actions
     n_action_steps = 1
     n_obs_steps = 8

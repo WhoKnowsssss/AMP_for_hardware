@@ -135,11 +135,8 @@ class LeggedRobot(BaseTask):
         self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
         # step physics and render each frame
         self.render()
-        print(np.round(self.actions.numpy()[0], decimals=2))
         actions_scaled = self.actions * self.cfg.control.action_scale
 
-        print(np.round((actions_scaled + self.default_dof_pos).numpy()[0], decimals=2))
-        print('\n')
 
         for _ in range(self.cfg.control.decimation):
 
@@ -318,9 +315,8 @@ class LeggedRobot(BaseTask):
             self.commands[:, 1] = lin_vel_y
             self.commands[:, 2] = ang_vel
 
-        print(self.commands)
-
-        self.privileged_obs_buf = torch.cat((  self.base_lin_vel * self.obs_scales.lin_vel,
+        self.privileged_obs_buf = torch.cat((
+                                    self.base_lin_vel * self.obs_scales.lin_vel,
                                     self.base_ang_vel  * self.obs_scales.ang_vel,
                                     self.projected_gravity,
                                     self.commands[:, :3] * self.commands_scale,
@@ -562,7 +558,7 @@ class LeggedRobot(BaseTask):
             self.root_states[env_ids] = self.base_init_state
             self.root_states[env_ids, :3] += self.env_origins[env_ids]
         # base velocities
-        self.root_states[env_ids, 7:13] = torch_rand_float(-0.5, 0.5, (len(env_ids), 6), device=self.device) # [7:10]: lin vel, [10:13]: ang vel
+        # self.root_states[env_ids, 7:13] = torch_rand_float(-0.5, 0.5, (len(env_ids), 6), device=self.device) # [7:10]: lin vel, [10:13]: ang vel
         env_ids_int32 = env_ids.to(dtype=torch.int32)
         self.gym.set_actor_root_state_tensor_indexed(self.sim,
                                                      gymtorch.unwrap_tensor(self.root_states),

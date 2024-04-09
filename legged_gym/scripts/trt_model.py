@@ -53,7 +53,7 @@ class TRTModel:
         return torch.Tensor(result)
 
 
-    def forward(self, sample: np.ndarray, timesteps: np.ndarray, cond: np.ndarray):
+    def forward(self, sample: np.ndarray, timesteps: np.ndarray, cond: np.ndarray) -> np.ndarray:
         """
         forward with np.ndarray inputs
         returns np.ndarray

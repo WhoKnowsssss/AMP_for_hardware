@@ -1,20 +1,15 @@
-from legged_gym import LEGGED_GYM_ROOT_DIR
-import os
-import threading
-
-import isaacgym
-from legged_gym.envs import *
-from legged_gym.utils import  get_args, export_policy_as_jit, task_registry, Logger
-
-import numpy as np
-import torch
-import time
 import sys
+import time
 import threading
 import queue
 
+import numpy as np
+import isaacgym
+import torch
 from matplotlib import pyplot as plt
 
+from legged_gym.envs import *
+from legged_gym.utils import get_args, task_registry, loadModel
 from legged_gym.envs.diffusion.diffusion_policy import DiffusionTransformerLowdimPolicy
 from legged_gym.envs.diffusion.diffusion_env_wrapper import DiffusionEnvWrapper
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
@@ -22,7 +17,6 @@ from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 
 from diffusion_policy.model.common.normalizer import LinearNormalizer
 
-from trt_model import TRTModel
 
 class logger_config:
     EXPORT_POLICY=False
@@ -35,7 +29,8 @@ def add_input(input_queue, stop_event):
         input_queue.put(sys.stdin.read(1))
 
 def play(args):
-    ckpt_name = 'new_go1_latest'
+    normalizer_ckpt_name = "./checkpoints/converted_config_dict.pt"
+
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing
     env_cfg.env.num_envs = 1
@@ -46,12 +41,6 @@ def play(args):
     env_cfg.domain_rand.randomize_friction = False
     env_cfg.domain_rand.push_robots = False
 
-
-    use_trt_acceleration = True
-
-    num_log_steps = 100
-    log_counter = 0
-    obs_log = []
     timestr = time.strftime("%m%d-%H%M%S")
     logdir = f'experiement_log_{timestr}'
     # os.mkdir(logdir)
@@ -59,14 +48,9 @@ def play(args):
     # prepare environment
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
     obs = env.get_observations()
+    
     # load policy
-    if use_trt_acceleration:
-        model = TRTModel("./checkpoints/{}_model.plan".format(ckpt_name))
-    else:
-        # converted_model.pt already contains the trained weights
-        # model = torch.load("./checkpoints/converted_model.pt")
-        model = torch.load("./checkpoints/{}_model.pt".format(ckpt_name))
-        model.eval()
+    model = loadModel(args.checkpoint)
     
     noise_scheduler = DDPMScheduler(
         num_train_timesteps=10,
@@ -94,10 +78,10 @@ def play(args):
 
     # )
     normalizer = LinearNormalizer()
-    config_dict, normalizer_ckpt = torch.load("./checkpoints/{}_config_dict.pt".format(ckpt_name))
+    config_dict, normalizer_ckpt = torch.load(normalizer_ckpt_name)
     normalizer._load_from_state_dict(normalizer_ckpt, 'normalizer.', None, None, None, None, None)
     horizon = config_dict['horizon']
-    obs_dim = env.num_obs
+    obs_dim = 45
     action_dim = env.num_actions
     n_action_steps = 1
     n_obs_steps = config_dict['n_obs_steps']
@@ -134,9 +118,8 @@ def play(args):
 
         global_idx += 1
     
-        # env.step()
         env.step_action()
-        # print('freq: ', 1/(time.perf_counter()-s))
+        print("action freq:", 1/(time.perf_counter()-s))
         s = time.perf_counter()
 
     def infer_diffusion_callback():
@@ -144,7 +127,7 @@ def play(args):
         if env.step_diffusion_flag:
             s2 = time.perf_counter()
             env.step_diffusion()
-            print('diff time: ', time.perf_counter() - s2)
+            print("diff freq:", 1/(time.perf_counter() - s2))
             env.step_diffusion_flag = True
     
     def call_every(seconds, callback, stop_event):
@@ -167,8 +150,8 @@ def play(args):
 
     # TODO: set the frequency of diffusion policy here. 
     # The frequency should be 30 / n_action_steps
-    action_stop_event = start_call_every_thread(1/30, infer_action_callback) 
-    diff_stop_event = start_call_every_thread(1/50, infer_diffusion_callback) 
+    action_stop_event = start_call_every_thread(1/50, infer_action_callback) 
+    diff_stop_event = start_call_every_thread(1/80, infer_diffusion_callback) 
 
 
     

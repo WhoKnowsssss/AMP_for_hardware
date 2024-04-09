@@ -4,3 +4,4 @@ tensorboard
 pybullet
 opencv-python
 torchaudio
+cuda-python
