@@ -33,7 +33,7 @@ from legged_gym.envs.a1.a1_config import A1RoughCfg, A1RoughCfgPPO
 from .base.legged_robot import LeggedRobot
 from .a1.a1_config import A1RoughCfg, A1RoughCfgPPO
 from .a1.a1_amp_config import A1AMPCfg, A1AMPCfgPPO
-from .real.real_robot import RealMiniCheetah
+from .real.real_cyberdog2 import RealCyberDog2
 
 
 import os
@@ -45,5 +45,6 @@ task_registry.register("a1_amp", LeggedRobot, A1AMPCfg(), A1AMPCfgPPO())
 task_registry.register("trot", LeggedRobot, A1RoughCfg(), A1RoughCfgPPO())
 task_registry.register("pace", LeggedRobot, A1RoughCfg(), A1RoughCfgPPO())
 
-task_registry.register("real_amp", RealMiniCheetah, A1AMPCfg(), A1AMPCfgPPO())
+# task_registry.register("real_amp", RealMiniCheetah, A1AMPCfg(), A1AMPCfgPPO())
+task_registry.register("real_amp", RealCyberDog2, A1AMPCfg(), A1AMPCfgPPO())
 

@@ -1,6 +1,4 @@
 from typing import Dict, Tuple
-
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,13 +7,15 @@ from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 
 from diffusion_policy.model.common.normalizer import LinearNormalizer
 from diffusion_policy.policy.base_lowdim_policy import BaseLowdimPolicy
+from diffusion_policy.model.diffusion.transformer_for_diffusion import TransformerForDiffusion
 from diffusion_policy.model.diffusion.mask_generator import LowdimMaskGenerator
+
 class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
     def __init__(self, 
-            model,
+            model: TransformerForDiffusion,
             noise_scheduler: DDPMScheduler,
-            normalizer: LinearNormalizer,
             horizon, 
+            normalizer,
             obs_dim, 
             action_dim, 
             n_action_steps, 
@@ -66,68 +66,14 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
             size=condition_data.shape, 
             dtype=condition_data.dtype,
             device=condition_data.device,
-            generator=generator)
-    
-        # set step values
-        scheduler.set_timesteps(self.num_inference_steps)
-
-        for t in scheduler.timesteps:
-            # 1. apply conditioning
-            trajectory[condition_mask] = condition_data[condition_mask]
-
-            # reshape time to be the same as batch size
-            t_reshaped = t.repeat(trajectory.shape[0])
-
-
-            # These are for debug purposes
-            # trajectory = torch.zeros(trajectory.shape)
-            # t_reshaped = torch.zeros(t_reshaped.shape)
-            # cond = torch.zeros(cond.shape)
-
-            # trajectory = torch.zeros((1, 16, 12), dtype=torch.float32)
-            # t_reshaped = torch.zeros((1, ), dtype=torch.float32)
-            # cond = torch.zeros((1, 8, 42), dtype=torch.float32)
-
-
-            # 2. predict model output
-            if not isinstance(model, nn.Module):
-                trajectory_np = trajectory.numpy().astype(np.float32)
-                t_np = t_reshaped.numpy().astype(np.float32)
-                cond_np = cond.numpy().astype(np.float32)
-                model_output = model.forward(trajectory_np, t_np, cond_np)
-                model_output = torch.from_numpy(model_output)
-            else:
-                model_output = model.forward(trajectory, t_reshaped, cond)
-
-
-            # model_output[0][0]
-            # given all zero output, the following show match
-
-            # torch
-            #tensor([-0.6648,  2.7134, -2.5313, -1.4247, -1.9261, -0.2153, -0.2339, -1.0256,
-        #            -0.8402, -1.0432, -2.6142,  0.4672]
-
-            # trt
-            # tensor([-0.8238,  2.8214, -2.6603, -1.6748, -1.8832, -0.1392, -0.7466, -1.2116,
-            #         -0.9013, -1.0385, -3.6310,  1.1337])
-
-                    # [-0.8238,  2.8214, -2.6603, -1.6748, -1.8832, -0.1392, -0.7466, -1.2116, 
-                    #  -0.9013, -1.0385, -3.6310,  1.1337]
-
-            if not isinstance(model, nn.Module):
-                model_output = torch.from_numpy(model_output)
-
-            # 3. compute previous image: x_t -> x_t-1
-            trajectory = scheduler.step(
-                model_output, t, trajectory, 
-                generator=generator,
-                **kwargs
-                ).prev_sample
+            generator=generator) * 0
         
-        # finally make sure conditioning is enforced
-        trajectory[condition_mask] = condition_data[condition_mask]        
+        t = torch.zeros(condition_data.shape[0], device=condition_data.device,)
 
-        return trajectory
+        # 2. predict model output
+        model_output = model(trajectory, t, cond)
+
+        return model_output
 
 
     def predict_action(self, obs_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
@@ -217,7 +163,6 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
         nbatch = self.normalizer.normalize(batch)
         obs = nbatch['obs']
         action = nbatch['action']
-
         # handle different ways of passing observation
         cond = None
         trajectory = action
@@ -238,17 +183,16 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
             condition_mask = self.mask_generator(trajectory.shape)
 
         # Sample noise that we'll add to the images
-        noise = torch.randn(trajectory.shape, device=trajectory.device)
+        noise = torch.randn(trajectory.shape, device=trajectory.device) * 0
         bsz = trajectory.shape[0]
         # Sample a random timestep for each image
         timesteps = torch.randint(
-            0, self.noise_scheduler.config.num_train_timesteps, 
+            0, 1,
             (bsz,), device=trajectory.device
         ).long()
         # Add noise to the clean images according to the noise magnitude at each timestep
         # (this is the forward diffusion process)
-        noisy_trajectory = self.noise_scheduler.add_noise(
-            trajectory, noise, timesteps)
+        noisy_trajectory = noise
         
         # compute loss mask
         loss_mask = ~condition_mask
@@ -259,7 +203,7 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
         # Predict the noise residual
         pred = self.model(noisy_trajectory, timesteps, cond)
 
-        pred_type = self.noise_scheduler.config.prediction_type 
+        pred_type = 'sample'
         if pred_type == 'epsilon':
             target = noise
         elif pred_type == 'sample':

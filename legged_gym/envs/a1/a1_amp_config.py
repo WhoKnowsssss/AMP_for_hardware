@@ -41,7 +41,7 @@ class A1AMPCfg(LeggedRobotCfg):
         include_history_steps = None  # Number of steps of history to include.
         num_observations = 42
         num_privileged_obs = 48
-        reference_state_initialization = True
+        reference_state_initialization = False
         reference_state_initialization_prob = 0.85
         amp_motion_files = MOTION_FILES
         ee_names = ["FL_foot", "FR_foot", "RL_foot", "RR_foot"]
@@ -103,7 +103,7 @@ class A1AMPCfg(LeggedRobotCfg):
 
     class noise:
         add_noise = True
-        noise_level = 1.0 # scales other values
+        noise_level = 10.0 # scales other values
         class noise_scales:
             dof_pos = 0.03
             dof_vel = 1.5
@@ -154,10 +154,10 @@ class A1AMPCfgPPO(LeggedRobotCfgPPO):
         num_mini_batches = 4
 
     class runner(LeggedRobotCfgPPO.runner):
-        run_name = ''
-        experiment_name = 'a1_amp_example'
-        algorithm_class_name = 'AMPPPO'
-        policy_class_name = 'ActorCritic'
+        run_name = ""
+        experiment_name = "cyberdog2"
+        algorithm_class_name = "AMPPPO"
+        policy_class_name = "ActorCritic"
         max_iterations = 500000 # number of policy updates
 
         amp_reward_coef = 2.0

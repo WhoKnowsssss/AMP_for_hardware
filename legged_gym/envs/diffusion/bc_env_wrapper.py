@@ -23,7 +23,7 @@ class DiffusionEnvWrapper:
       
         self.idx = 0
 
-        self.step_diffusion_flag = True
+        self.step_diffusion_flag = False
 
     
     def step(self):
@@ -33,7 +33,8 @@ class DiffusionEnvWrapper:
         pred_action = action_dict['action_pred']
        
         action = pred_action[:,history:history+self.n_action_steps,:]
-
+        if action.shape[1] == 0:
+            action = pred_action[:,-1:,:]
         # step env
         for i in range(self.n_action_steps):
             action_step = action[:,i,:]
@@ -50,35 +51,21 @@ class DiffusionEnvWrapper:
             time.sleep(1/30)
 
     def step_action(self):
-        self.idx = self.idx % self.n_action_steps
-        self.idx = 0
-        if self.idx == 0:
-            self.diffusion_action_queues[:] = self.diffusion_action_queues_new[:]
-            # print("load new actions")
-        action_step = self.diffusion_action_queues[:,self.idx,:]
+        history = self.n_obs_steps
+        obs_dict = {'obs': self.state_history[:,1:].cuda()}
+        # print("new actions start")
+        with torch.no_grad():
+            action_dict = self.policy.predict_action(obs_dict)
+        pred_action = action_dict['action_pred'].cpu()
+
+        action_step = pred_action[:,-1]
+        print(action_step)
         # print("current idx: ", self.idx, " took action")
 
         obs, _, rews, dones, infos, _, _ = self.env.step(action_step.detach())
         # print("current idx: ", self.idx, " step")
 
-    
         self.state_history = torch.roll(self.state_history, shifts=-1, dims=1)
         self.action_history = torch.roll(self.action_history, shifts=-1, dims=1)
         self.state_history[:,-1,:] = obs
         self.action_history[:,-1,:] = action_step
-
-        if self.idx == self.n_action_steps - 2:
-            self.step_diffusion_flag = True
-
-        self.idx += 1
-
-    def step_diffusion(self):
-
-        history = self.n_obs_steps
-        obs_dict = {'obs': self.state_history[:,1:]}
-        # print("new actions start")
-        action_dict = self.policy.predict_action(obs_dict)
-        pred_action = action_dict['action_pred']
-       
-        self.diffusion_action_queues_new[:] = pred_action[:,history:history+self.n_action_steps,:]
-        # print("new actions done")

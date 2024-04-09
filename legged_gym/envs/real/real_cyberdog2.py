@@ -28,24 +28,50 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
+import os
 import time
+import threading
+
 import numpy as np
 from scipy.spatial.transform import Rotation
-
 from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
-
 import torch
+from cc.udp import UDPTx, UDPRx
+
 from legged_gym.envs.base.legged_robot import LeggedRobot
 # from torch.tensor import Tensor
-try:
-    import rospy 
-    from std_msgs.msg import Float32MultiArray, Float32, String
-    from sensor_msgs.msg import Joy
-except:
-    print("rospy not found, please install ros to do real experiments.")
 
-class RealMiniCheetah(LeggedRobot):
+import time
+import threading
+from ctypes import *
+
+import numpy as np
+
+HOST_IP     = b"192.168.44.101"
+HOST_PORT   = 9000
+ROBOT_IP = "192.168.44.1"
+ROBOT_PORT = 8000
+
+N_OBSERVATIONS  = 45
+N_ACTIONS = 12
+
+communication_freq = 100
+
+# print current directory
+udp = cdll.LoadLibrary("/home/tk/Desktop/playground/AMP_for_hardware/libudp.so")
+
+
+class UDPRx(Structure):
+    _fields_ = [
+        ("sockfd", c_int),
+        ("thread_id", c_ulonglong),
+        ("robot_addr", c_byte * 16),
+        ("host_addr", c_byte * 16),
+        ("obs", c_float * N_OBSERVATIONS),
+    ]
+
+class RealCyberDog2(LeggedRobot):
     def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
         self.cfg = cfg
         
@@ -72,21 +98,33 @@ class RealMiniCheetah(LeggedRobot):
         # self._ref_motion = refmotion()
         is_local=False   # hard code
         # self._udp=cheetah_udp_interface(is_local=is_local)
-        rospy.init_node('cheetah_udp_interface', anonymous=True)
         env_ids =torch.ones([self.num_envs]).bool().nonzero(as_tuple=False).flatten()
         # first receive observation before reset ref motion.
-        self.raw_observation=np.zeros(37)
-        rospy.Subscriber("/go1_lowlevel/robot_state", Float32MultiArray, self._cheetah_obs_callback)
-        rospy.Subscriber("/go1_lowlevel/status_flag", Float32MultiArray, self._status_callback)
-        rospy.Subscriber("/joy", Joy, self._status_callback_2)
-        self.publisher = rospy.Publisher('/go1_lowlevel/actions', Float32MultiArray, queue_size=1)
+        self.raw_observation=np.zeros((N_OBSERVATIONS, ))
+        
+
+        # self.rx_udp = UDPRx((HOST_IP, HOST_PORT))
+        self.rx_udp = UDPRx()
+        error = udp.initialize(byref(self.rx_udp), HOST_IP, HOST_PORT, ROBOT_IP, ROBOT_PORT)
+        if error:
+            print("Error initializing UDPRx")
+            exit()
+        self.tx_udp = UDPTx((ROBOT_IP, ROBOT_PORT))
+
+
+        self.rx_buffer = None
+        self.tx_buffer = np.zeros((N_ACTIONS, ), dtype=np.float32)
+
+        self.is_running = threading.Event()
+
         self._state_flag = 0
 
         #self._recv_commands[0:10] = np.array([0.3, 0.0, 0.0, 0.0, np.pi, np.pi, 0, 0.6, 0.12, 0.35])
         self._recv_commands = np.array([0.5, 0.0, 0.0, ])
 
     def _cheetah_obs_callback(self, data):
-        self.raw_observation[:]=np.array(data.data)
+        # self.raw_observation[:]=np.array(data.data)
+        pass
         
     def _status_callback(self, data):
         self._state_flag = np.array(data.data)[0]
@@ -118,29 +156,39 @@ class RealMiniCheetah(LeggedRobot):
         if len(env_ids) == 0:
             return
         
-    def step(self,actions):
-        # self.filter(actions)  TODO disable filter?
-        # clip
-        clip_actions = self.cfg.normalization.clip_actions
-        self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
-        if int(self._state_flag) !=  1:
-            self.actions*=0
+    def step(self, actions):
+        # # self.filter(actions)  TODO disable filter?
+        # # clip
+        # clip_actions = self.cfg.normalization.clip_actions
+        # self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
 
-        # step physics and render each frame
-        # self._clip_max_change()
-        self._process_action_to_real(self.actions)
+        # # if int(self._state_flag) != 1:
+        # #     self.actions *= 0
 
-        self.publisher.publish(Float32MultiArray(data=self.final_actions[0]))
+        # # step physics and render each frame
+        # # self._clip_max_change()
 
-        self.decode_observation()
+        # # self.actions[:, :] = 0
+        # # self.actions[:, 2] = 0.6 * np.sin(2 * time.time())
+        # # self.actions[:, 5] = 0.6 * np.sin(2 * time.time())
+        # # self.actions[:, 8] = 0.6 * np.sin(2 * time.time())
+        # # self.actions[:, 11] = 0.6 * np.sin(2 * time.time())
 
-        # return clipped obs, clipped states (None), rewards, dones and infos
-        clip_obs = self.cfg.normalization.clip_observations
-        self.obs_buf = torch.clip(self.obs_buf, -clip_obs, clip_obs)
-        if self.privileged_obs_buf is not None:
-            self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
+        # self.txHandler(self.actions[0].detach().cpu().numpy())
+
+        # self.decode_observation()
 
         return self.obs_buf, self.privileged_obs_buf, self.rew_buf, self.reset_buf, self.extras, None, None
+
+    def _compute_real_observations(self, actions):
+        used_obs = np.array(self.rx_udp.obs).reshape(1, -1)
+        used_obs[:, 6:9] = self._recv_commands[:3] * self.commands_scale.cpu().numpy()
+
+        # used_obs = np.concatenate([used_obs[:, :3], used_obs[:, 6:-12], actions[None, :]], axis=-1) # HACK for current AMP
+        used_obs = np.concatenate([used_obs[:, :3], used_obs[:, 6:]], axis=-1) # HACK for current AMP
+        self.obs_buf = torch.from_numpy(used_obs).float().to(self.device)   
+
+        return self.obs_buf
 
     def _rpy_to_quat(self, rpy):
         rot = Rotation.from_euler('xyz', rpy, degrees=False)
@@ -150,73 +198,33 @@ class RealMiniCheetah(LeggedRobot):
     def decode_observation(self):
         # Convert quaternion from wxyz to xyzw, which is default for Pybullet.
         # print(self.raw_observation)
+        used_obs = self.raw_observation.copy().reshape(1, -1)
+        used_obs[:, 6:9] = self._recv_commands * self.commands_scale.cpu().numpy()
 
-        self._recv_orientation = self.raw_observation[3:7]
-
-        self._recv_rpyrate = np.array(self.raw_observation[10:13])
-        
-        # print("real_xyzw",self._recv_orientation)
-        # print("rpy_rate", self._recv_rpyrate)
-
-        self._tweak_motor_order_direction()
-
-        # turn numpy to tensors:
-        self.base_quat = to_torch(self._recv_orientation,device=self.device).view(1,-1)
-        self.base_ang_vel = to_torch(self._recv_rpyrate,device=self.device).view(1,-1)
-        self.dof_pos = to_torch(self._recv_motor_angles,device=self.device).view(1,-1)
-        self.dof_vel = to_torch(self._recv_motor_vels,device=self.device).view(1,-1)
-        self.projected_gravity = quat_rotate_inverse(self.base_quat, self.gravity_vec)
-        self.commands = to_torch(self._recv_commands,device=self.device).view(1,-1)
-        # self.commands = to_torch(self._recv_commands,device=self.device).view(1,-1)
-        # self._receive_gamepad_commands_once()
-        self.base_ang_vel = quat_rotate_inverse(self.base_quat, self.base_ang_vel)
-        # print(self.commands[:,0:10])
-        self.obs_buf_without_history = torch.cat((  
-                                    self.projected_gravity,
-                                    self.commands[:, :3] * self.commands_scale,
-                                    (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,
-                                    self.dof_vel * self.obs_scales.dof_vel,
-                                    self.actions
-                                    ),dim=-1)
-        # print(self.obs_buf_without_history)
-        # fill in self.obs_buf
-        self.obs_buf = self.obs_buf_without_history
+        used_obs = np.concatenate([used_obs[:, :3], used_obs[:, 6:-12], self.actions], axis=-1) # HACK for current AMP
 
 
-    def _tweak_motor_order_direction(self):
-        # isaac order:  FL FR HL HR     abduction +hip+ knee
-        # cheetah software order: FR FL HR HL adduction + hip + knee
-        dof_state = self.raw_observation[13:37].reshape(12,-1)
-        raw_angles = dof_state[:,0]
-        raw_vels = dof_state[:,1]
-        self._recv_motor_angles[6:9] = raw_angles[3:6]
-        self._recv_motor_angles[3:6] = raw_angles[6:9]
+        self.obs_buf = torch.from_numpy(used_obs).float().to(self.device)
 
-        self._recv_motor_angles[0:3] = raw_angles[0:3]
-        self._recv_motor_angles[9:12] = raw_angles[9:12]
-
-        self._recv_motor_vels[6:9] = raw_vels[3:6]
-        self._recv_motor_vels[3:6] = raw_vels[6:9]
-
-        self._recv_motor_vels[0:3] = raw_vels[0:3]
-        self._recv_motor_vels[9:12] = raw_vels[9:12]
+        # print(self.obs_buf)
 
 
-        # change directions
-        self._recv_motor_angles = self.motor_direction_correction * self._recv_motor_angles
-        self._recv_motor_vels = self.motor_direction_correction * self._recv_motor_vels
-    
-    def _process_action_to_real(self,raw_actions):
-        # raw_actions=self.actions.clone() *motor_direction
-        raw_actions = raw_actions.cpu().numpy()
-        self._tweaked_actions[6:9] = raw_actions[0,3:6]
-        self._tweaked_actions[3:6] = raw_actions[0,6:9]
+    def rxHandler(self):
+        # self.rx_udp._sock.settimeout(timeout)
+        while not self.is_running.is_set():
+            n_elements = 45
+            dtype = np.float32
 
-        self._tweaked_actions[0:3] = raw_actions[0,0:3]
-        self._tweaked_actions[9:12] = raw_actions[0,9:12]
-        
+            rx_buffer = self.rx_udp.recvNumpy(
+                bufsize=n_elements*np.dtype(dtype).itemsize, 
+                dtype=dtype, 
+                timeout=0.01)
+            if rx_buffer is not None:
+                self.raw_observation[:] = rx_buffer
 
-        actions_scaled = self._tweaked_actions * self.cfg.control.action_scale
-        final_actions = actions_scaled + self.default_dof_pos.cpu().numpy()
-        self.final_actions = final_actions * self.motor_direction_correction
-        #self.final_actions[:, [0, 3, 6, 9]] = 0.
+    def txHandler(self, actions: np.ndarray):
+        actions = actions.astype(np.float32)
+
+        self.tx_udp.send(actions)
+        # print("TX message: %s" % actions)
+
