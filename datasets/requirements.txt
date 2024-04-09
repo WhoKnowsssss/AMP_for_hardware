@@ -1,0 +1,4 @@
+pyquaternion
+pygame
+lxml
+transformations

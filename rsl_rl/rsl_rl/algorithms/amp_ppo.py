@@ -219,6 +219,10 @@ class AMPPPO:
                 # Discriminator loss.
                 policy_state, policy_next_state = sample_amp_policy
                 expert_state, expert_next_state = sample_amp_expert
+            
+                policy_state_unnorm = torch.clone(policy_state)
+                expert_state_unnorm = torch.clone(expert_state)
+
                 if self.amp_normalizer is not None:
                     with torch.no_grad():
                         policy_state = self.amp_normalizer.normalize_torch(policy_state, self.device)
@@ -233,8 +237,7 @@ class AMPPPO:
                     policy_d, -1 * torch.ones(policy_d.size(), device=self.device))
                 amp_loss = 0.5 * (expert_loss + policy_loss)
                 grad_pen_loss = self.discriminator.compute_grad_pen(
-                    *sample_amp_expert, lambda_=10)
-
+                    expert_state, expert_next_state, lambda_=10)
                 # Compute total loss.
                 loss = (
                     surrogate_loss +
@@ -252,8 +255,8 @@ class AMPPPO:
                     self.actor_critic.std.data = self.actor_critic.std.data.clamp(min=self.min_std)
 
                 if self.amp_normalizer is not None:
-                    self.amp_normalizer.update(policy_state.cpu().numpy())
-                    self.amp_normalizer.update(expert_state.cpu().numpy())
+                    self.amp_normalizer.update(policy_state_unnorm.cpu().numpy())
+                    self.amp_normalizer.update(expert_state_unnorm.cpu().numpy())
 
                 mean_value_loss += value_loss.item()
                 mean_surrogate_loss += surrogate_loss.item()

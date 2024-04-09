@@ -3,6 +3,9 @@
 # Learn more about .gitignore:
 #     https://www.atlassian.com/git/tutorials/saving-changes/gitignore
 
+# conda environment
+.conda-env/
+
 # Node artifact files
 node_modules/
 dist/
@@ -15,6 +18,9 @@ dist/
 
 # Log files
 *.log
+
+# Distribution / packaging
+build/
 
 # Package files
 *.jar
@@ -57,6 +63,5 @@ runs
 # other
 *.egg-info
 __pycache__
-
 
 /checkpoints/latest.ckpt
