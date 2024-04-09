@@ -153,9 +153,10 @@ class A1AMPCfgPPO(LeggedRobotCfgPPO):
         num_learning_epochs = 5
         num_mini_batches = 4
 
-    class runner(LeggedRobotCfgPPO.runner):
-        run_name = ''
-        experiment_name = 'a1_amp_example'
+    class runner( LeggedRobotCfgPPO.runner ):
+        run_name = ""
+        # experiment_name = 'a1_amp_example'
+        experiment_name = "a1_amp"
         algorithm_class_name = 'AMPPPO'
         policy_class_name = 'ActorCritic'
         max_iterations = 500000 # number of policy updates

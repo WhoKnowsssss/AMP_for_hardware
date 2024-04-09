@@ -30,9 +30,11 @@
 
 import sys
 import os
+import time
 import threading
 import time
 import queue
+import signal
 
 import isaacgym
 import numpy as np
@@ -115,9 +117,10 @@ def play(args):
     start_idx = np.inf
     stand_override = False
 
+    print("running")
+
     s = time.perf_counter()
     s2 = time.perf_counter()
-
 
     def infer_action_callback():
         nonlocal env, policy, obs, obss, idx, s, start_idx, global_idx, stand_override
@@ -134,21 +137,19 @@ def play(args):
     def call_every(seconds, callback, stop_event):
         t1 = time.perf_counter()
         t2 = time.perf_counter()
+        
         while not stop_event.wait(seconds - (t1-t2)):
             t2 = time.perf_counter()
             callback()
-            # print("freq", callback, 1/(time.perf_counter()-t1))
+            # print("freq", 1/(time.perf_counter()-t1))
             t1 = time.perf_counter()
-            # print('wait, ', seconds - (t1-t2))
+        
 
     def start_call_every_thread(seconds, callback):
         stop_event = threading.Event()
         thread = threading.Thread(target=call_every, args=(seconds, callback, stop_event), daemon=True)
         thread.start()
         return stop_event
-
-
-
     
     action_stop_event = start_call_every_thread(0.02, infer_action_callback)
     save_flag = LOG_EXP
