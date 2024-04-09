@@ -1,5 +1,5 @@
 import sys
-sys.path.append("../Diffusion-Benchmark/")
+# sys.path.append("../Diffusion-Benchmark/")
 
 from datetime import datetime as dt
 from glob import glob
@@ -40,11 +40,28 @@ class TRTModel:
                   self.context.get_tensor_shape(self.lTensorName[i]), self.lTensorName[i])
 
 
-    def forward(self, sample: torch.Tensor, timesteps: torch.Tensor, cond: torch.Tensor):
+    def forwardTorch(self, sample: torch.Tensor, timesteps: torch.Tensor, cond: torch.Tensor):
+        """
+        forward with torch.Tensor inputs
+        returns torch.Tensor
+        """
+        result = self.forward(
+            sample.cpu().numpy(),
+            timesteps.cpu().numpy(),
+            cond.cpu().numpy(),
+        )
+        return torch.Tensor(result)
+
+
+    def forward(self, sample: np.ndarray, timesteps: np.ndarray, cond: np.ndarray):
+        """
+        forward with np.ndarray inputs
+        returns np.ndarray
+        """
         bufferH = []
-        bufferH.append(np.ascontiguousarray(sample.cpu().numpy()))
-        bufferH.append(np.ascontiguousarray(timesteps.cpu().numpy()))
-        bufferH.append(np.ascontiguousarray(cond.cpu().numpy()))
+        bufferH.append(np.ascontiguousarray(sample))
+        bufferH.append(np.ascontiguousarray(timesteps))
+        bufferH.append(np.ascontiguousarray(cond))
         for i in range(self.nInput, self.nIO):
             bufferH.append(np.empty(self.context.get_tensor_shape(self.lTensorName[i]), dtype=trt.nptype(self.engine.get_tensor_dtype(self.lTensorName[i]))))
         
@@ -71,8 +88,6 @@ class TRTModel:
         
         for b in bufferD:
             cudart.cudaFree(b)
-
-        result = torch.Tensor(result)
 
         return result
 
