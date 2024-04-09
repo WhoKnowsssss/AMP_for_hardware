@@ -32,13 +32,13 @@ URDF_FILENAME = "{LEGGED_GYM_ROOT_DIR}/resources/robots/cyberdog2/urdf/cyberdog2
 OUTPUT_DIR = "{LEGGED_GYM_ROOT_DIR}/datasets/mocap_motions_cyberdog2".format(
     LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
 
-REF_POS_SCALE = 0.65       # HACK: TBD
+REF_POS_SCALE = 0.6       # HACK: TBD
 INIT_POS = np.array([0, 0, 0.25])
 INIT_ROT = np.array([0, 0, 0, 1.0])
 
 SIM_TOE_JOINT_IDS = [9, 17, 25, 33]
 SIM_HIP_JOINT_IDS = [2, 10, 18, 26]
-SIM_ROOT_OFFSET = np.array([0, 0, -0.02])
+SIM_ROOT_OFFSET = np.array([0, 0, -0.0])
 SIM_TOE_OFFSET_LOCAL = [
     np.array([0, 0.06, 0.0]),
     np.array([0, -0.06, 0.0]),
@@ -86,31 +86,31 @@ HL_FOOT_NAME = "RL_foot"
 
 MOCAP_MOTIONS = [
     # Output motion name, input file, frame start, frame end, motion weight.
-    [
-        "pace0",
-        "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk00_joint_pos.txt".format(
-            LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), 162, 201, 1
-    ],
+    # [
+    #     "pace0",
+    #     "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk00_joint_pos.txt".format(
+    #         LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), 162, 201, 1
+    # ],
     [
         "pace1",
         "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk00_joint_pos.txt".format(
             LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), 201, 400, 1
     ],
-    # [
-    #     "pace2",
-    #     "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk00_joint_pos.txt".format(
-    #         LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), 400, 600, 1
-    # ],
     [
-        "trot0",
-        "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk03_joint_pos.txt".format(
-            LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), 448, 481, 1
-    ],
-    [
-        "trot1",
-        "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk03_joint_pos.txt".format(
+        "pace2",
+        "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk00_joint_pos.txt".format(
             LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), 400, 600, 1
     ],
+    # [
+    #     "trot0",
+    #     "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk03_joint_pos.txt".format(
+    #         LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), 448, 481, 1
+    # ],
+    # [
+    #     "trot1",
+    #     "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk03_joint_pos.txt".format(
+    #         LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), 400, 600, 1
+    # ],
     # [
     #     "trot2",
     #     "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_run04_joint_pos.txt".format(
@@ -131,21 +131,21 @@ MOCAP_MOTIONS = [
     #     "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_run00_joint_pos.txt".format(
     #         LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), 480, 566, 1
     # ],
-    [
-        "right_turn0",
-        "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk09_joint_pos.txt".format(
-            LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), 1085, 1124, 1.5
-    ],
+    # [
+    #     "right_turn0",
+    #     "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk09_joint_pos.txt".format(
+    #         LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), 1085, 1124, 1.5
+    # ],
     # [
     #     "right_turn1",
     #     "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk09_joint_pos.txt".format(
     #         LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), 560, 670, 1.5
     # ],
-    [
-        "left_turn0",
-        "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk09_joint_pos.txt".format(
-            LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), 2404, 2450, 1.5
-    ],
+    # [
+    #     "left_turn0",
+    #     "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk09_joint_pos.txt".format(
+    #         LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), 2404, 2450, 1.5
+    # ],
     # [
     #     "left_turn1",
     #     "{LEGGED_GYM_ROOT_DIR}/datasets/keypoint_datasets/ai4animation/dog_walk09_joint_pos.txt".format(

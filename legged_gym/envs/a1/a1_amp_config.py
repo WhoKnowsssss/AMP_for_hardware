@@ -67,10 +67,10 @@ class A1AMPCfg(LeggedRobotCfg):
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
         control_type = 'P'
-        stiffness = {'joint': 80.}  # [N*m/rad]
-        damping = {'joint': 1.0}     # [N*m*s/rad]
-        # stiffness = {'joint': 30.}  # [N*m/rad]
-        # damping = {'joint': 3.0}     # [N*m*s/rad]
+        # stiffness = {'joint': 80.}  # [N*m/rad]
+        # damping = {'joint': 1.0}     # [N*m*s/rad]
+        stiffness = {'joint': 30.}  # [N*m/rad]
+        damping = {'joint': 3.0}     # [N*m*s/rad]
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.25
         # decimation: Number of control action updates @ sim DT per policy DT
@@ -140,15 +140,15 @@ class A1AMPCfg(LeggedRobotCfg):
         resampling_time = 10. # time before command are changed[s]
         heading_command = False # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [-0.7, 1.5] # min max [m/s]
-            lin_vel_y = [-0.3, 0.3]   # min max [m/s]
-            ang_vel_yaw = [-1.57, 1.57]    # min max [rad/s]
+            lin_vel_x = [0.5, 0.5] # min max [m/s]
+            lin_vel_y = [-0., 0.]   # min max [m/s]
+            ang_vel_yaw = [-0, 0]    # min max [rad/s]
             heading = [-3.14, 3.14]
 
 class A1AMPCfgPPO(LeggedRobotCfgPPO):
     runner_class_name = 'AMPOnPolicyRunner'
     class algorithm(LeggedRobotCfgPPO.algorithm):
-        entropy_coef = 0.001
+        entropy_coef = 0.005
         amp_replay_buffer_size = 1000000
         num_learning_epochs = 5
         num_mini_batches = 4
@@ -163,7 +163,7 @@ class A1AMPCfgPPO(LeggedRobotCfgPPO):
         amp_reward_coef = 2.0
         amp_motion_files = MOTION_FILES
         amp_num_preload_transitions = 2000000
-        amp_task_reward_lerp = 0.3
+        amp_task_reward_lerp = 0.2
         amp_discr_hidden_dims = [1024, 512]
 
         min_normalized_std = [0.01, 0.01, 0.01] * 4

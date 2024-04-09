@@ -230,4 +230,4 @@ class OnPolicyRunner:
         self.alg.actor_critic.eval() # switch to evaluation mode (dropout for example)
         if device is not None:
             self.alg.actor_critic.to(device)
-        return self.alg.actor_critic.act_inference
+        return self.alg.actor_critic

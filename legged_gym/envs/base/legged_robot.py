@@ -98,6 +98,19 @@ class LeggedRobot(BaseTask):
         if self.cfg.env.reference_state_initialization:
             self.amp_loader = AMPLoader(motion_files=self.cfg.env.amp_motion_files, device=self.device, time_between_frames=self.dt)
 
+    def get_diffusion_action(self):
+        return self.actions
+    def get_diffusion_observation(self):
+        commands = self.commands.clone()
+        return  torch.cat((  
+            self.projected_gravity,
+            self.projected_forward_vec,
+            commands[:, :3] * self.commands_scale[:3],
+            (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,
+            self.dof_vel * self.obs_scales.dof_vel,
+            self.actions,       
+        ), dim=-1)  
+
     def reset(self):
         """ Reset all robots"""
         self.reset_idx(torch.arange(self.num_envs, device=self.device))
@@ -105,7 +118,11 @@ class LeggedRobot(BaseTask):
             self.obs_buf_history.reset(
                 torch.arange(self.num_envs, device=self.device),
                 self.obs_buf[torch.arange(self.num_envs, device=self.device)])
-        obs, privileged_obs, _, _, _, _, _ = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
+        try:
+            obs, privileged_obs, _, _, _, _, _ = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
+        except:
+            obs, privileged_obs, _, _, _ = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
+        
         return obs, privileged_obs
 
     def step(self, actions):
@@ -139,7 +156,7 @@ class LeggedRobot(BaseTask):
         if self.privileged_obs_buf is not None:
             self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
 
-        return policy_obs, self.privileged_obs_buf, self.rew_buf, self.reset_buf, self.extras, reset_env_ids, terminal_amp_states
+        return policy_obs, self.privileged_obs_buf, self.rew_buf, self.reset_buf, self.extras #, reset_env_ids, terminal_amp_states
 
     def get_observations(self):
         if self.cfg.env.include_history_steps is not None:
@@ -164,6 +181,7 @@ class LeggedRobot(BaseTask):
         self.base_lin_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
         self.base_ang_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
         self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
+        self.projected_forward_vec[:] = quat_rotate_inverse(self.base_quat, self.forward_vec)
 
         self._post_physics_step_callback()
 
@@ -292,6 +310,8 @@ class LeggedRobot(BaseTask):
             self.commands[:, 0] = lin_vel_x
             self.commands[:, 1] = lin_vel_y
             self.commands[:, 2] = ang_vel
+
+        print(self.commands)
 
         self.privileged_obs_buf = torch.cat((  self.base_lin_vel * self.obs_scales.lin_vel,
                                     self.base_ang_vel  * self.obs_scales.ang_vel,
@@ -670,6 +690,7 @@ class LeggedRobot(BaseTask):
         self.base_lin_vel = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
         self.base_ang_vel = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
         self.projected_gravity = quat_rotate_inverse(self.base_quat, self.gravity_vec)
+        self.projected_forward_vec = quat_rotate_inverse(self.base_quat, self.forward_vec)
         if self.cfg.terrain.measure_heights:
             self.height_points = self._init_height_points()
         self.measured_heights = 0

@@ -73,6 +73,8 @@ def play(args):
     else:
       t += env.dt
 
+    print(t)
+
     env_ids = torch.tensor([0], device=env.device)
     root_pos = env.amp_loader.get_root_pos_batch(
         env.amp_loader.get_full_frame_at_time_batch(

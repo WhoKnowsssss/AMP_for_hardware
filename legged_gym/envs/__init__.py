@@ -42,6 +42,8 @@ from legged_gym.utils.task_registry import task_registry
 
 task_registry.register("a1", LeggedRobot, A1RoughCfg(), A1RoughCfgPPO())
 task_registry.register("a1_amp", LeggedRobot, A1AMPCfg(), A1AMPCfgPPO())
+task_registry.register("trot", LeggedRobot, A1RoughCfg(), A1RoughCfgPPO())
+task_registry.register("pace", LeggedRobot, A1RoughCfg(), A1RoughCfgPPO())
 
 task_registry.register("real_amp", RealMiniCheetah, A1AMPCfg(), A1AMPCfgPPO())
 
