@@ -79,7 +79,7 @@ class RealMiniCheetah(LeggedRobot):
         rospy.Subscriber("/go1_lowlevel/robot_state", Float32MultiArray, self._cheetah_obs_callback)
         rospy.Subscriber("/go1_lowlevel/status_flag", Float32MultiArray, self._status_callback)
         rospy.Subscriber("/go1_lowlevel/robot_command", Float32MultiArray, self._command_callback)
-        rospy.Subscriber("/joy", Joy, self._status_callback_2)
+        rospy.Subscriber("/joy", Joy, self._joystick_callback)
         self.publisher = rospy.Publisher('/go1_lowlevel/actions', Float32MultiArray, queue_size=1)
         self._state_flag = 0
 
@@ -96,20 +96,25 @@ class RealMiniCheetah(LeggedRobot):
     def _command_callback(self, data):
         self._recv_commands = np.array(data.data)
 
-    def _status_callback_2(self, data):
-        # self._recv_commands[0] = data.axes[3] if data.axes[3] > 0 else 0
-        # # self._recv_commands[1] = data.axes[0]
-        # self._recv_commands[2] = data.axes[0] * 0.5
-
+    def _joystick_callback(self, data):
         if data.buttons[1]==1:
             self._state_flag = 1
             print("pressed A!")
         elif data.buttons[2]==1:
             self._state_flag = 0
-        elif data.buttons[3]==1:
-            self._recv_commands = np.array([0.1, 0, 0.])
-        elif data.buttons[0]==1:
-            self._recv_commands = np.array([1., 0, 0.])
+        
+        commanded_velocity_x = data.axes[3] if data.axes[3] > 0 else 0
+        commanded_velocity_y = data.axes[0]
+        commanded_velocity_z = data.axes[2]
+
+        self._recv_commands[0] = commanded_velocity_x
+        self._recv_commands[1] = commanded_velocity_y
+        self._recv_commands[2] = commanded_velocity_z
+
+        # elif data.buttons[3]==1:
+        #     self._recv_commands = np.array([0.1, 0, 0.])
+        # elif data.buttons[0]==1:
+        #     self._recv_commands = np.array([1., 0, 0.])
 
 
     def _clip_max_change(self):

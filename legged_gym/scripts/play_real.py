@@ -105,6 +105,8 @@ def play(args):
     start_idx = np.inf
     stand_override = False
 
+    print("running")
+
     s = time.perf_counter()
     s2 = time.perf_counter()
 
@@ -127,7 +129,7 @@ def play(args):
         while not stop_event.wait(seconds - (t1-t2)):
             t2 = time.perf_counter()
             callback()
-            print("freq", 1/(time.perf_counter()-t1))
+            # print("freq", 1/(time.perf_counter()-t1))
             t1 = time.perf_counter()
         
 

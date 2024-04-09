@@ -20,22 +20,24 @@ Mask: `255.255.255.0`
 ## Follow the original readme to install this package
 
 ## Hardware Setup
+
 1. ROS Comm: 
 
 Set Mini PC as master node, policy PC as compute node
 
 Master PC: 
+
 ```
 export ROS_MASTER_URI=http://master_ip:11311
 export ROS_IP=master_ip
 ```
 
 Compute PC: 
+
 ```
 export ROS_MASTER_URI=http://master_ip:11311
 export ROS_IP=compute_ip
 ```
-
 
 Connect Mini PC (Master PC) to dog via ethernet cable
 
@@ -56,7 +58,7 @@ roscore
 
 ### Window #2 (Run Hardware/Gazebo):
 
-Hardware: 
+Go1: 
 
 ```bash
 conda activate amp_hw

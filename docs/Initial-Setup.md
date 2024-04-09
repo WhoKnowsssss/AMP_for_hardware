@@ -59,3 +59,14 @@ pip install dill
 python legged_gym/scripts/play_diff.py --task=a1_amp --sim_device=cpu --rl_device=cpu
 ```
 
+
+## Qiayuan Build
+
+```bash
+cd ~/qiayuan_ws/
+catkin build
+# catkin build legged_controllers legged_unitree_description -DPYTHON_EXECUTABLE=/usr/bin/python3
+# catkin build legged_rl_controllers legged_unitree_description -DPYTHON_EXECUTABLE=/usr/bin/python3
+# catkin build legged_gazebo -DPYTHON_EXECUTABLE=/usr/bin/python3
+# catkin build legged_unitree_hw -DPYTHON_EXECUTABLE=/usr/bin/python3
+```
