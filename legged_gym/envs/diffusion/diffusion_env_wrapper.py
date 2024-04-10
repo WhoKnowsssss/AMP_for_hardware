@@ -5,7 +5,6 @@ import torch
 
 from legged_gym.envs.real.real_cyberdog2 import RealCyberDog2
 
-
 class DiffusionEnvWrapper:
     def __init__(self, env, policy, n_obs_steps=8, n_action_steps=8):
 

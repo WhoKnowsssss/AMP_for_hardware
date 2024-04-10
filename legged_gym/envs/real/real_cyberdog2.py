@@ -51,7 +51,7 @@ import numpy as np
 
 HOST_IP     = b"192.168.44.101"
 HOST_PORT   = 9000
-ROBOT_IP = "192.168.44.1"
+ROBOT_IP = b"192.168.44.1"
 ROBOT_PORT = 8000
 
 N_OBSERVATIONS  = 45
@@ -110,7 +110,7 @@ class RealCyberDog2(LeggedRobot):
         if error:
             print("Error initializing UDPRx")
             exit()
-        self.tx_udp = UDPTx((ROBOT_IP, ROBOT_PORT))
+        # self.tx_udp = UDPTx((ROBOT_IP, ROBOT_PORT))
 
         self.rx_buffer = None
         self.tx_buffer = np.zeros((N_ACTIONS, ), dtype=np.float32)
@@ -120,7 +120,7 @@ class RealCyberDog2(LeggedRobot):
         self._state_flag = 0
 
         #self._recv_commands[0:10] = np.array([0.3, 0.0, 0.0, 0.0, np.pi, np.pi, 0, 0.6, 0.12, 0.35])
-        self._recv_commands = np.array([0.7, 0.0, 0.0, ])
+        self._recv_commands = np.array([0.1, -1, 0.0, ])
 
     def _cheetah_obs_callback(self, data):
         # self.raw_observation[:]=np.array(data.data)
