@@ -125,7 +125,7 @@ def play(args):
         if env.c_wrapper.stepDiffusionFlag == 1:
             s2 = time.perf_counter()
             env.step_diffusion_new()
-            print("diff time:", (time.perf_counter() - s2))
+            # print("diff time:", (time.perf_counter() - s2))
             # env.c_wrapper.stepDiffusionFlag = 0
     
 
@@ -141,10 +141,10 @@ def play(args):
             # print("outer: ", env.c_wrapper.stepDiffusionFlag)
             if env.c_wrapper.stepDiffusionFlag == 1:
                 env.c_wrapper.stepDiffusionFlag = 0
-                s2 = time.perf_counter()
+                # s2 = time.perf_counter()
                 env.step_diffusion_new()
-                print("diff time:", (time.perf_counter() - s2))
-            time.sleep(0.001)
+                # print("diff time:", (time.perf_counter() - s2))
+            # time.sleep(0.001)
     except KeyboardInterrupt:
         pass
         

@@ -31,6 +31,7 @@ typedef struct {
   float action_queue[N_ACTION_STEPS][N_ACTIONS];
   float observation_history[N_OBS_STEPS+1][N_OBSERVATIONS];
   u_int8_t stepDiffusionFlag;
+  u_int8_t newActionFlag;
   float* new_action_queue;
   UDPRx* udp;
 } DiffusionWrapper;
@@ -121,9 +122,13 @@ void send_action(void *wrapper_ptr) {
         wrapper->stepDiffusionFlag = 1;
     }
     wrapper->stepDiffusionFlag = 1;
-    printf("Diffusion Flag: %d, idx: %d\n", wrapper->stepDiffusionFlag, idx);
+    // printf("Diffusion Flag: %d, idx: %d\n", wrapper->stepDiffusionFlag, idx);
 
     if (idx == 0) {
+      if (wrapper->newActionFlag == 0){
+        printf("Missed Diffusion Step! \n");
+      }
+      wrapper->newActionFlag = 0;
         memcpy(wrapper->action_queue[0], wrapper->new_action_queue, N_ACTIONS * sizeof(float) * N_ACTION_STEPS);
         // Print action queue
         // for (int i = 0; i < N_ACTION_STEPS; i++) {
@@ -183,6 +188,7 @@ int init_diffusion_wrapper(
   memset(wrapper->action_queue, 0, N_ACTION_STEPS * N_ACTIONS * sizeof(float));
   memset(wrapper->observation_history, 0, (N_OBS_STEPS + 1) * N_OBSERVATIONS * sizeof(float));
   wrapper->stepDiffusionFlag = 1;
+  wrapper->newActionFlag = 0;
 
   set_udp_pointer(wrapper, udp);
   wrapper->new_action_queue = new_action_queue;

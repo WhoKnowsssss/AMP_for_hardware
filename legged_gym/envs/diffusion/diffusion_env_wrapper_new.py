@@ -23,6 +23,7 @@ class DiffusionWrapper(Structure):
         ("action_queue", c_float * N_ACTION_STEPS * N_ACTIONS),
         ("observation_history", c_float * (N_OBS_STEPS+1) * N_OBSERVATIONS),
         ("stepDiffusionFlag", c_uint8),
+        ("newActionFlag", c_uint8),
         ("new_action_queue", POINTER(c_float)),
         ("rx_udp", POINTER(UDPRx))
     ]
@@ -90,7 +91,7 @@ class DiffusionEnvWrapper:
         # print("new actions start")
         # print("obs_dict: ", obs_dict['obs'].shape) 
         # print(torch.all(obs_dict['obs'] == 0, dim=-1))
-        print("obs_dict: ", obs_dict['obs'][:,:,0])
+        # print("obs_dict: ", obs_dict['obs'][:,:,0])
         action_dict = self.policy.predict_action(obs_dict)
         pred_action = action_dict['action_pred']
        
@@ -105,3 +106,4 @@ class DiffusionEnvWrapper:
         actions: np.array = actions.detach().cpu().numpy()
         actions_ptr = actions.ctypes.data_as(POINTER(c_float))
         udp.set_new_action_queue(byref(self.c_wrapper), actions_ptr)
+        self.c_wrapper.newActionFlag = 1
