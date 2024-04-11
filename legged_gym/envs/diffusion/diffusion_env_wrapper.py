@@ -42,7 +42,7 @@ class DiffusionEnvWrapper:
         # step env
         for i in range(self.n_action_steps):
             action_step = action[:,i,:]
-            action_step = self.env.getFilteredAction(action_step)
+            # action_step = self.env.getFilteredAction(action_step)
             obs, _, rews, dones, infos  = self.env.step(action_step.detach())
         
             self.state_history = torch.roll(self.state_history, shifts=-1, dims=1)

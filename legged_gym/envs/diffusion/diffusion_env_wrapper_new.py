@@ -7,7 +7,7 @@ from legged_gym.envs.real.real_cyberdog2 import RealCyberDog2, UDPRx
 
 from ctypes import *
 
-udp = cdll.LoadLibrary("/home/tk/Desktop/playground/AMP_for_hardware/libudp.so")
+udp = cdll.LoadLibrary("/home/hrg/Desktop/playground/AMP_for_hardware/libudp.so")
 
 
 
@@ -85,7 +85,7 @@ class DiffusionEnvWrapper:
         history = self.n_obs_steps
         memmove(self.state_history_numpy.ctypes.data, byref(self.c_wrapper.observation_history), self.state_history_numpy.nbytes)
 
-        self.state_history_numpy[:,6:9] = self.env._recv_commands * self.env.commands_scale.cpu().numpy()
+        self.state_history_numpy[:,6:9] = (self.env._recv_commands * self.env.commands_scale.cpu().numpy())
         obs_dict = {'obs': torch.from_numpy(self.state_history_numpy).unsqueeze(0).to(self.env.device)[:,1:]}
         # obs_dict = {'obs': self.state_history[:,1:]}
         # print("new actions start")

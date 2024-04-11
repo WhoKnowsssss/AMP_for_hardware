@@ -43,7 +43,9 @@ from diffusion_policy.model.common.normalizer import LinearNormalizer
 
 
 def play(args):
-    normalizer_ckpt_name = "./checkpoints/converted_config_dict.pt"
+    checkpoint: str = args.checkpoint
+    checkpoint = checkpoint.replace('model.plan', 'config_dict.pt')
+    normalizer_ckpt_name = checkpoint #"./checkpoints/converted_config_dict.pt"
 
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing

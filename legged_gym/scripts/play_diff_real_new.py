@@ -36,7 +36,9 @@ def add_input(input_queue, stop_event):
         input_queue.put(sys.stdin.read(1))
 
 def play(args):
-    normalizer_ckpt_name = "./checkpoints/converted_config_dict.pt"
+
+    checkpoint: str = args.checkpoint
+    normalizer_ckpt_name = checkpoint.replace('.plan', '_config_dict.pt') #"./checkpoints/converted_config_dict.pt"
 
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing

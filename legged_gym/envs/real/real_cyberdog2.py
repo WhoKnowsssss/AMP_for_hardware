@@ -60,7 +60,7 @@ N_ACTIONS = 12
 communication_freq = 100
 
 # print current directory
-udp = cdll.LoadLibrary("/home/tk/Desktop/playground/AMP_for_hardware/libudp.so")
+udp = cdll.LoadLibrary("/home/hrg/Desktop/playground/AMP_for_hardware/libudp.so")
 
 
 class UDPRx(Structure):
@@ -119,8 +119,15 @@ class RealCyberDog2(LeggedRobot):
 
         self._state_flag = 0
 
-        #self._recv_commands[0:10] = np.array([0.3, 0.0, 0.0, 0.0, np.pi, np.pi, 0, 0.6, 0.12, 0.35])
-        self._recv_commands = np.array([0.1, -1, 0.0, ])
+        # standwalk
+        # self._recv_commands = np.array([0.1, -1, 0.0, ])
+
+        # trot/pace
+        self._recv_commands = np.array([0.2, 0.5, 0.0, ])
+
+        # hop/bounce
+        # self._recv_commands = np.array([0.8, 0., 0.0, ])
+
 
     def _cheetah_obs_callback(self, data):
         # self.raw_observation[:]=np.array(data.data)
