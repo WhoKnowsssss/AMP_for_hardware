@@ -123,10 +123,10 @@ class RealCyberDog2(LeggedRobot):
         # self._recv_commands = np.array([0.1, -1, 0.0, ])
 
         # trot/pace
-        self._recv_commands = np.array([0.2, 0.5, 0.0, ])
+        # self._recv_commands = np.array([0.5, 0.5, 0.0, ])
 
         # hop/bounce
-        # self._recv_commands = np.array([0.8, 0., 0.0, ])
+        self._recv_commands = np.array([0.4, 0., 0.0, ])
 
 
     def _cheetah_obs_callback(self, data):
@@ -202,37 +202,8 @@ class RealCyberDog2(LeggedRobot):
         rot = Rotation.from_euler('xyz', rpy, degrees=False)
         rot_quat = rot.as_quat()
         return rot_quat
-
-    def decode_observation(self):
-        # Convert quaternion from wxyz to xyzw, which is default for Pybullet.
-        # print(self.raw_observation)
-        used_obs = self.raw_observation.copy().reshape(1, -1)
-        used_obs[:, 6:9] = self._recv_commands * self.commands_scale.cpu().numpy()
-
-        used_obs = np.concatenate([used_obs[:, :3], used_obs[:, 6:-12], self.actions], axis=-1) # HACK for current AMP
-
-
-        self.obs_buf = torch.from_numpy(used_obs).float().to(self.device)
-
-        # print(self.obs_buf)
-
-
-    def rxHandler(self):
-        # self.rx_udp._sock.settimeout(timeout)
-        while not self.is_running.is_set():
-            n_elements = 45
-            dtype = np.float32
-
-            rx_buffer = self.rx_udp.recvNumpy(
-                bufsize=n_elements*np.dtype(dtype).itemsize, 
-                dtype=dtype, 
-                timeout=0.01)
-            if rx_buffer is not None:
-                self.raw_observation[:] = rx_buffer
-
-    def txHandler(self, actions: np.ndarray):
-        actions = actions.astype(np.float32)
-
-        self.tx_udp.send(actions)
-        # print("TX message: %s" % actions)
-
+    
+    def get_sit_pos(self):
+        return torch.tensor([
+            0,-35/57.3,65/57.3,0,-35/57.3,65/57.3,0,-35/57.3,65/57.3,0,-35/57.3,65/57.3
+        ]) / self.cfg.control.action_scale

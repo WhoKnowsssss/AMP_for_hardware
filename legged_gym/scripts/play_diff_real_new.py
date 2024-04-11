@@ -9,7 +9,7 @@ import torch
 from matplotlib import pyplot as plt
 
 from legged_gym.envs import *
-from legged_gym.utils import get_args, task_registry, loadModel, IntervalTimer
+from legged_gym.utils import get_args, task_registry, loadModel, Gamepad, Hand
 from legged_gym.envs.diffusion.diffusion_policy import DiffusionTransformerLowdimPolicy
 from legged_gym.envs.diffusion.diffusion_env_wrapper_new import DiffusionEnvWrapper, N_ACTION_STEPS
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
@@ -36,6 +36,9 @@ def add_input(input_queue, stop_event):
         input_queue.put(sys.stdin.read(1))
 
 def play(args):
+    gamepad = Gamepad(0)
+    gamepad.start()
+
 
     checkpoint: str = args.checkpoint
     normalizer_ckpt_name = checkpoint.replace('.plan', '_config_dict.pt') #"./checkpoints/converted_config_dict.pt"
@@ -122,14 +125,6 @@ def play(args):
 
     s = time.perf_counter()
 
-    def infer_diffusion_callback():
-        nonlocal env
-        if env.c_wrapper.stepDiffusionFlag == 1:
-            s2 = time.perf_counter()
-            env.step_diffusion_new()
-            # print("diff time:", (time.perf_counter() - s2))
-            # env.c_wrapper.stepDiffusionFlag = 0
-    
 
     # TODO: set the frequency of diffusion policy here. 
     # The frequency should be 30 / n_action_steps
@@ -137,9 +132,13 @@ def play(args):
 
 
     # diff_event.start()
-    
+    idx = 0
     try:
         while True:
+            # if idx % 10 == 0:
+                # velx = np.abs(gamepad.getY(Hand.left)) * 0.7 + 0.3
+                # env.set_command(velx)
+
             # print("outer: ", env.c_wrapper.stepDiffusionFlag)
             if env.c_wrapper.stepDiffusionFlag == 1:
                 env.c_wrapper.stepDiffusionFlag = 0
@@ -147,8 +146,9 @@ def play(args):
                 env.step_diffusion_new()
                 # print("diff time:", (time.perf_counter() - s2))
             # time.sleep(0.001)
+            idx += 1
     except KeyboardInterrupt:
-        pass
+        gamepad.stop()
         
 
 if __name__ == '__main__':

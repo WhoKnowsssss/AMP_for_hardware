@@ -49,10 +49,12 @@ class DiffusionEnvWrapper:
         self.diffusion_action_queues_new = torch.zeros((env.num_envs, n_action_steps, env.num_actions), dtype=torch.float32, device=device)
 
       
-        self.idx = 0        
+        self.idx = 0       
+        self.start_time = time.perf_counter() 
         self.c_wrapper = DiffusionWrapper()
         actions_ptr = actions.ctypes.data_as(POINTER(c_float))
         udp.init_diffusion_wrapper(byref(self.c_wrapper), byref(self.env.rx_udp), actions_ptr)
+        self.not_transitioned = True
         
     # def step(self):
     #     history = self.n_obs_steps
@@ -80,12 +82,29 @@ class DiffusionEnvWrapper:
     #         freq = 1/elapsed_t
     #         print("step freq: ", freq)
 
+    def set_command(self, velx):
+        self.env._recv_commands[0] = velx
+        self.env._recv_commands[1] = 0.5
+        
     def step_diffusion_new(self):
 
         history = self.n_obs_steps
         memmove(self.state_history_numpy.ctypes.data, byref(self.c_wrapper.observation_history), self.state_history_numpy.nbytes)
 
+
+        # if (time.perf_counter() - self.start_time > 4.) and self.not_transitioned:
+        #     self.env._recv_commands[1] = 0.
+        #     self.env._recv_commands[0] = 0.3
+        #     self.not_transitioned = True
+        #     self.state_history_numpy[:] = self.state_history_numpy[-1]
+        if (time.perf_counter() - self.start_time > 2.4) and (self.not_transitioned):
+            self.env._recv_commands[1] = -1.
+            self.env._recv_commands[0] = 0.1
+            self.not_transitioned = False
+            # self.state_history_numpy[:] = self.state_history_numpy[-1]
+
         self.state_history_numpy[:,6:9] = (self.env._recv_commands * self.env.commands_scale.cpu().numpy())
+        print(self.state_history_numpy[-1, 6:9])
         obs_dict = {'obs': torch.from_numpy(self.state_history_numpy).unsqueeze(0).to(self.env.device)[:,1:]}
         # obs_dict = {'obs': self.state_history[:,1:]}
         # print("new actions start")
@@ -103,6 +122,9 @@ class DiffusionEnvWrapper:
         #     actions[:,i,:] = self.env.getFilteredAction(actions[:,i,:])
 
         # set the new address in C
+        if (time.perf_counter() - self.start_time > 2) and (time.perf_counter() - self.start_time < 2.4):
+            actions[:] = self.env.get_sit_pos()
+
         actions: np.array = actions.detach().cpu().numpy()
         actions_ptr = actions.ctypes.data_as(POINTER(c_float))
         udp.set_new_action_queue(byref(self.c_wrapper), actions_ptr)

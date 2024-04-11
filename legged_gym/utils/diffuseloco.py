@@ -1,9 +1,9 @@
 import threading
 
-from absl import logging
-
 import numpy as np
 from scipy.signal import butter
+import inputs
+from absl import logging
 import torch
 
 from legged_gym.scripts.trt_model import TRTModel
@@ -249,3 +249,89 @@ class ActionFilterExp(ActionFilter):
 
     super(ActionFilterExp, self).__init__(
         a_coeffs, b_coeffs, order, num_joints, self.ftype)
+
+
+
+class Hand:
+    left = "L"
+    right = "R"
+
+
+class Gamepad:
+    def __init__(self, idx: int = 0):
+        self.idx = idx
+        self.device = inputs.devices.gamepads[self.idx]
+        self.axis_scale = 0x8000
+
+        self.axis_names = [
+            "ABS_X",
+            "ABS_Y",
+            "ABS_RX",
+            "ABS_RY",
+            "ABS_Z",
+            "ABS_RZ",
+            "ABS_HAT0X",
+            "ABS_HAT0Y",
+        ]
+        self.axes = [0] * len(self.axis_names)
+
+        self.button_names = [
+            "BTN_SOUTH",    # A
+            "BTN_EAST",     # B
+            "BTN_NORTH",    # X
+            "BTN_WEST",     # Y
+            "BTN_TL",       # Bumper L
+            "BTN_TR",       # Bumper R
+            "BTN_SELECT",   # Back
+            "BTN_START",    # Start
+        ]
+        self.buttons = [0] * len(self.button_names)
+
+        self.is_stopped = threading.Event()
+    
+    def _runForever(self):
+        while not self.is_stopped.is_set():
+            self.update()
+    
+    def start(self):
+        t = threading.Thread(target=self._runForever)
+        t.start()
+    
+    def stop(self):
+        self.is_stopped.set()
+
+    def update(self):
+        events = self.device.read()
+        for e in events:
+            if e.ev_type == "Absolute":
+                self.axes[self.axis_names.index(e.code)] = e.state / self.axis_scale
+            if e.ev_type == "Key":
+                self.buttons[self.button_names.index(e.code)] = e.state
+
+    def getX(self, hand: str):
+        if hand == Hand.left:
+            return self.axes[0]
+        return self.axes[2]
+    
+    def getY(self, hand: str):
+        if hand == Hand.left:
+            return self.axes[1]
+        return self.axes[3]
+
+    def getZ(self, hand: str):
+        if hand == Hand.left:
+            return self.axes[4]
+        return self.axes[5]
+
+    def getButtonA(self):
+        return self.buttons[0]
+    
+    def getButtonB(self):
+        return self.buttons[1]
+    
+    def getButtonX(self):
+        return self.buttons[2]
+    
+    def getButtonY(self):
+        return self.buttons[3]
+        
