@@ -10,6 +10,7 @@
 
 
 #define N_ACTIONS       12
+#define N_ACS_PARAMS    3
 #define N_OBSERVATIONS  45
 
 #define N_ACTION_STEPS  1
@@ -29,6 +30,7 @@ typedef struct {
 typedef struct {
   pthread_t thread_id;
   float action_queue[N_ACTION_STEPS][N_ACTIONS];
+  float acs_params[N_ACS_PARAMS];
   float observation_history[N_OBS_STEPS+1][N_OBSERVATIONS];
   u_int8_t stepDiffusionFlag;
   u_int8_t newActionFlag;
@@ -93,7 +95,7 @@ void receive(void *udp_ptr) {
 void send_action(void *wrapper_ptr) {
   DiffusionWrapper *wrapper = (DiffusionWrapper *)wrapper_ptr;
   struct timespec next;
-  float tx_buffer[N_ACTIONS] = {0}; // Example data, replace with actual data generation logic
+  float tx_buffer[N_ACTIONS+N_ACS_PARAMS] = {0}; // Example data, replace with actual data generation logic
   int period_ns = 1000000000 / SEND_RATE_HZ; // Period in nanoseconds
 
   // Get the current time
@@ -115,7 +117,6 @@ void send_action(void *wrapper_ptr) {
     // global_idx += 1;
     // memset(wrapper->observation_history[N_OBS_STEPS], 0, N_OBSERVATIONS * sizeof(float));
     memcpy(wrapper->observation_history[N_OBS_STEPS], wrapper->udp->obs, N_OBSERVATIONS * sizeof(float));
-
 
     idx = idx % N_ACTION_STEPS;
     if (idx == N_ACTION_STEPS - 2) {
@@ -141,6 +142,13 @@ void send_action(void *wrapper_ptr) {
     }
 
     memcpy(tx_buffer, wrapper->action_queue[idx], N_ACTIONS * sizeof(float));
+    memcpy(((float *)tx_buffer) + N_ACTIONS, wrapper->acs_params, N_ACS_PARAMS * sizeof(float));
+    // printf("Action Params: ");
+    // for (int i = 0; i < N_ACS_PARAMS; i++) {
+    //   printf("%f ", tx_buffer[i + N_ACTIONS]);
+    // }
+    // printf("\n");
+
     // printf("Sending action: ");
     // for (int i = 0; i < N_ACTIONS; i++) {
     //   printf("%f ", tx_buffer[i]);

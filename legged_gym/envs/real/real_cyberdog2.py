@@ -123,10 +123,10 @@ class RealCyberDog2(LeggedRobot):
         # self._recv_commands = np.array([0.1, -1, 0.0, ])
 
         # trot/pace
-        # self._recv_commands = np.array([0.5, 0.5, 0.0, ])
+        self._recv_commands = np.array([0.3, 0.5, 0.0, ])
 
         # hop/bounce
-        self._recv_commands = np.array([0.4, 0., 0.0, ])
+        # self._recv_commands = np.array([0.4, 0., 0.0, ])
 
 
     def _cheetah_obs_callback(self, data):
@@ -207,3 +207,4 @@ class RealCyberDog2(LeggedRobot):
         return torch.tensor([
             0,-35/57.3,65/57.3,0,-35/57.3,65/57.3,0,-35/57.3,65/57.3,0,-35/57.3,65/57.3
         ]) / self.cfg.control.action_scale
+    

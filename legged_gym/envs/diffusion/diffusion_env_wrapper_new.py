@@ -12,6 +12,7 @@ udp = cdll.LoadLibrary("/home/hrg/Desktop/playground/AMP_for_hardware/libudp.so"
 
 
 N_OBSERVATIONS  = 45
+N_ACS_PARAMS = 3
 N_ACTIONS = 12
 
 N_ACTION_STEPS = 1
@@ -21,6 +22,7 @@ class DiffusionWrapper(Structure):
     _fields_ = [
         ("thread_id", c_ulonglong),
         ("action_queue", c_float * N_ACTION_STEPS * N_ACTIONS),
+        ("acs_params", c_float * N_ACS_PARAMS),
         ("observation_history", c_float * (N_OBS_STEPS+1) * N_OBSERVATIONS),
         ("stepDiffusionFlag", c_uint8),
         ("newActionFlag", c_uint8),
@@ -55,6 +57,7 @@ class DiffusionEnvWrapper:
         actions_ptr = actions.ctypes.data_as(POINTER(c_float))
         udp.init_diffusion_wrapper(byref(self.c_wrapper), byref(self.env.rx_udp), actions_ptr)
         self.not_transitioned = True
+        self.not_transitioned_2 = True
         
     # def step(self):
     #     history = self.n_obs_steps
@@ -92,16 +95,25 @@ class DiffusionEnvWrapper:
         memmove(self.state_history_numpy.ctypes.data, byref(self.c_wrapper.observation_history), self.state_history_numpy.nbytes)
 
 
-        # if (time.perf_counter() - self.start_time > 4.) and self.not_transitioned:
+        # if (time.perf_counter() - self.start_time > 6.4) and self.not_transitioned:
         #     self.env._recv_commands[1] = 0.
         #     self.env._recv_commands[0] = 0.3
-        #     self.not_transitioned = True
+        #     self.not_transitioned = False
         #     self.state_history_numpy[:] = self.state_history_numpy[-1]
-        if (time.perf_counter() - self.start_time > 2.4) and (self.not_transitioned):
+        if (time.perf_counter() - self.start_time > 6.4) and (self.not_transitioned) and ((time.perf_counter() - self.start_time < 20.)):
             self.env._recv_commands[1] = -1.
             self.env._recv_commands[0] = 0.1
             self.not_transitioned = False
-            # self.state_history_numpy[:] = self.state_history_numpy[-1]
+            self.state_history_numpy[:] = self.state_history_numpy[-1]
+            self.c_wrapper.acs_params[2] = 1.
+
+
+        if (time.perf_counter() - self.start_time > 13.3) and (self.not_transitioned_2):
+            self.c_wrapper.acs_params[2] = 0.
+            self.env._recv_commands[1] = 0.
+            self.env._recv_commands[0] = 0.4
+            self.not_transitioned_2 = False
+            self.state_history_numpy[:] = self.state_history_numpy[-1]
 
         self.state_history_numpy[:,6:9] = (self.env._recv_commands * self.env.commands_scale.cpu().numpy())
         print(self.state_history_numpy[-1, 6:9])
@@ -115,15 +127,17 @@ class DiffusionEnvWrapper:
         pred_action = action_dict['action_pred']
        
         actions = pred_action[:,history:history+self.n_action_steps,:]
-        # Print pred_actions
-        # print(actions)
 
-        # for i in range(self.n_action_steps):
-        #     actions[:,i,:] = self.env.getFilteredAction(actions[:,i,:])
-
-        # set the new address in C
-        if (time.perf_counter() - self.start_time > 2) and (time.perf_counter() - self.start_time < 2.4):
+        if (time.perf_counter() - self.start_time > 6.) and (time.perf_counter() - self.start_time < 6.4):
             actions[:] = self.env.get_sit_pos()
+            self.c_wrapper.acs_params[2] = 1.
+
+        if (time.perf_counter() - self.start_time) > 12 and (time.perf_counter() - self.start_time) < 12.1:
+            self.c_wrapper.acs_params[2] = 2.
+
+        if (time.perf_counter() - self.start_time) > 12.1 and (time.perf_counter() - self.start_time) < 13.3:    
+            actions[:] = 0.
+        # print("acs params: ", self.c_wrapper.acs_params[2])
 
         actions: np.array = actions.detach().cpu().numpy()
         actions_ptr = actions.ctypes.data_as(POINTER(c_float))
