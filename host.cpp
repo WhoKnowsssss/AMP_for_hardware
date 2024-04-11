@@ -12,7 +12,7 @@
 #define HOST_IP     "192.168.44.101"
 #define HOST_PORT   9000
 
-#define ROBOT_IP    "192.168.44.100"
+#define ROBOT_IP    "192.168.44.1"
 #define ROBOT_PORT  8000
 
 
