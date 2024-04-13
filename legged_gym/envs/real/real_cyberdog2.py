@@ -59,8 +59,7 @@ N_ACTIONS = 12
 
 communication_freq = 100
 
-# print current directory
-udp = cdll.LoadLibrary("/home/hrg/Desktop/playground/AMP_for_hardware/libudp.so")
+udp = cdll.LoadLibrary(os.path.join(os.getcwd(), "libudp.so"))
 
 
 class UDPRx(Structure):
