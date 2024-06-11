@@ -48,7 +48,7 @@ try:
 except:
     print("Install TRT for real experiments")
 def play(args):
-    ckpt_name = 'tf_bc_nstep'
+    ckpt_name = 'converted'
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing
     env_cfg.env.num_envs = min(env_cfg.env.num_envs, 1)
@@ -94,15 +94,14 @@ def play(args):
     config_dict, normalizer_ckpt = torch.load("./checkpoints/{}_config_dict.pt".format(ckpt_name))
     normalizer._load_from_state_dict(normalizer_ckpt, 'normalizer.', None, None, None, None, None)
 
-    horizon = 16
-    obs_dim = env.num_obs
+    horizon = config_dict['horizon']
+    obs_dim = 45
     action_dim = env.num_actions
     n_action_steps = 3
-    n_obs_steps = 8
-    num_inference_steps=20
+    num_inference_steps=config_dict['num_inference_steps']
+    n_obs_steps = config_dict['n_obs_steps']
     obs_as_cond=True
     pred_action_steps_only=False
-    
     policy = DiffusionTransformerLowdimPolicy(
         model=model,
         noise_scheduler=noise_scheduler,

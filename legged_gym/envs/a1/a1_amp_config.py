@@ -41,7 +41,7 @@ class A1AMPCfg(LeggedRobotCfg):
         include_history_steps = None  # Number of steps of history to include.
         num_observations = 42
         num_privileged_obs = 48
-        reference_state_initialization = True
+        reference_state_initialization = False
         reference_state_initialization_prob = 0.85
         amp_motion_files = MOTION_FILES
         ee_names = ["FL_foot", "FR_foot", "RL_foot", "RR_foot"]
@@ -67,10 +67,10 @@ class A1AMPCfg(LeggedRobotCfg):
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
         control_type = 'P'
-        stiffness = {'joint': 80.}  # [N*m/rad]
-        damping = {'joint': 1.0}     # [N*m*s/rad]
-        # stiffness = {'joint': 30.}  # [N*m/rad]
-        # damping = {'joint': 3.0}     # [N*m*s/rad]
+        # stiffness = {'joint': 80.}  # [N*m/rad]
+        # damping = {'joint': 1.0}     # [N*m*s/rad]
+        stiffness = {'joint': 30.}  # [N*m/rad]
+        damping = {'joint': 3.0}     # [N*m*s/rad]
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.25
         # decimation: Number of control action updates @ sim DT per policy DT
@@ -103,7 +103,7 @@ class A1AMPCfg(LeggedRobotCfg):
 
     class noise:
         add_noise = True
-        noise_level = 1.0 # scales other values
+        noise_level = 10.0 # scales other values
         class noise_scales:
             dof_pos = 0.03
             dof_vel = 1.5
@@ -140,31 +140,30 @@ class A1AMPCfg(LeggedRobotCfg):
         resampling_time = 10. # time before command are changed[s]
         heading_command = False # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [-0.7, 1.5] # min max [m/s]
-            lin_vel_y = [-0.3, 0.3]   # min max [m/s]
-            ang_vel_yaw = [-1.57, 1.57]    # min max [rad/s]
+            lin_vel_x = [0.3, 0.3] # min max [m/s]
+            lin_vel_y = [-0., 0.]   # min max [m/s]
+            ang_vel_yaw = [-0, 0]    # min max [rad/s]
             heading = [-3.14, 3.14]
 
 class A1AMPCfgPPO(LeggedRobotCfgPPO):
     runner_class_name = 'AMPOnPolicyRunner'
     class algorithm(LeggedRobotCfgPPO.algorithm):
-        entropy_coef = 0.001
+        entropy_coef = 0.005
         amp_replay_buffer_size = 1000000
         num_learning_epochs = 5
         num_mini_batches = 4
 
-    class runner( LeggedRobotCfgPPO.runner ):
+    class runner(LeggedRobotCfgPPO.runner):
         run_name = ""
-        # experiment_name = 'a1_amp_example'
-        experiment_name = "a1_amp"
-        algorithm_class_name = 'AMPPPO'
-        policy_class_name = 'ActorCritic'
+        experiment_name = "cyberdog2"
+        algorithm_class_name = "AMPPPO"
+        policy_class_name = "ActorCritic"
         max_iterations = 500000 # number of policy updates
 
         amp_reward_coef = 2.0
         amp_motion_files = MOTION_FILES
         amp_num_preload_transitions = 2000000
-        amp_task_reward_lerp = 0.3
+        amp_task_reward_lerp = 0.2
         amp_discr_hidden_dims = [1024, 512]
 
         min_normalized_std = [0.01, 0.01, 0.01] * 4

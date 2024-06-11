@@ -412,6 +412,12 @@ def main(argv):
         config.INIT_POS,
         config.INIT_ROT,
         flags=p.URDF_MAINTAIN_LINK_ORDER)
+
+    # print all joint names
+    num_joints = pybullet.getNumJoints(robot)
+    for i in range(num_joints):
+      joint_info = pybullet.getJointInfo(robot, i)
+      print(i, joint_info[1])
     # Set robot to default pose to bias knees in the right direction.
     set_pose(
         robot,

@@ -80,7 +80,7 @@ def play(args):
     config_dict, normalizer_ckpt = torch.load("./checkpoints/{}_config_dict.pt".format(ckpt_name))
     normalizer._load_from_state_dict(normalizer_ckpt, 'normalizer.', None, None, None, None, None)
     horizon = 16
-    obs_dim = env.num_obs
+    obs_dim = 45
     action_dim = env.num_actions
     n_action_steps = 3
     n_obs_steps = 8

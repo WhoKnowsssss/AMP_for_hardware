@@ -28,6 +28,7 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
+import os
 import time
 import threading
 
@@ -39,21 +40,36 @@ import torch
 from cc.udp import UDPTx, UDPRx
 
 from legged_gym.envs.base.legged_robot import LeggedRobot
+from legged_gym.utils import ActionFilterButter
 # from torch.tensor import Tensor
 
-HOST_IP = "192.168.44.101"
-HOST_PORT = 9000
+import time
+import threading
+from ctypes import *
 
-ROBOT_IP = "192.168.44.1"
+import numpy as np
+
+HOST_IP     = b"192.168.44.101"
+HOST_PORT   = 9000
+ROBOT_IP = b"192.168.44.1"
 ROBOT_PORT = 8000
 
-
+N_OBSERVATIONS  = 45
 N_ACTIONS = 12
-N_OBSERVATIONS = 45
 
 communication_freq = 100
 
+udp = cdll.LoadLibrary(os.path.join(os.getcwd(), "libudp.so"))
 
+
+class UDPRx(Structure):
+    _fields_ = [
+        ("sockfd", c_int),
+        ("thread_id", c_ulonglong),
+        ("robot_addr", c_byte * 16),
+        ("host_addr", c_byte * 16),
+        ("obs", c_float * N_OBSERVATIONS),
+    ]
 
 class RealCyberDog2(LeggedRobot):
     def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
@@ -87,24 +103,30 @@ class RealCyberDog2(LeggedRobot):
         self.raw_observation=np.zeros((N_OBSERVATIONS, ))
         
 
-        self.rx_udp = UDPRx((HOST_IP, HOST_PORT))
-        self.tx_udp = UDPTx((ROBOT_IP, ROBOT_PORT))
-
+        # self.rx_udp = UDPRx((HOST_IP, HOST_PORT))
+        self.rx_udp = UDPRx()
+        error = udp.initialize(byref(self.rx_udp), HOST_IP, HOST_PORT, ROBOT_IP, ROBOT_PORT)
+        if error:
+            print("Error initializing UDPRx")
+            exit()
+        # self.tx_udp = UDPTx((ROBOT_IP, ROBOT_PORT))
 
         self.rx_buffer = None
         self.tx_buffer = np.zeros((N_ACTIONS, ), dtype=np.float32)
 
         self.is_running = threading.Event()
 
-        self.rx_timer = threading.Thread(target=self.rxHandler)
-        
-        self.rx_timer.start()
-
-
         self._state_flag = 0
 
-        #self._recv_commands[0:10] = np.array([0.3, 0.0, 0.0, 0.0, np.pi, np.pi, 0, 0.6, 0.12, 0.35])
-        self._recv_commands = np.array([0.5, 0.0, 0.0, ])
+        # standwalk
+        # self._recv_commands = np.array([0.1, -1, 0.0, ])
+
+        # trot/pace
+        self._recv_commands = np.array([0.3, 0.5, 0.0, ])
+
+        # hop/bounce
+        # self._recv_commands = np.array([0.4, 0., 0.0, ])
+
 
     def _cheetah_obs_callback(self, data):
         # self.raw_observation[:]=np.array(data.data)
@@ -139,72 +161,49 @@ class RealCyberDog2(LeggedRobot):
         """
         if len(env_ids) == 0:
             return
-        
+
     def step(self, actions):
-        # self.filter(actions)  TODO disable filter?
-        # clip
-        clip_actions = self.cfg.normalization.clip_actions
-        self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
+        # # self.filter(actions)  TODO disable filter?
+        # # clip
+        # clip_actions = self.cfg.normalization.clip_actions
+        # self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
 
-        # if int(self._state_flag) != 1:
-        #     self.actions *= 0
+        # # if int(self._state_flag) != 1:
+        # #     self.actions *= 0
 
-        # step physics and render each frame
-        # self._clip_max_change()
+        # # step physics and render each frame
+        # # self._clip_max_change()
 
-        # self.actions[:, :] = 0
-        # self.actions[:, 2] = 0.6 * np.sin(2 * time.time())
-        # self.actions[:, 5] = 0.6 * np.sin(2 * time.time())
-        # self.actions[:, 8] = 0.6 * np.sin(2 * time.time())
-        # self.actions[:, 11] = 0.6 * np.sin(2 * time.time())
+        # # self.actions[:, :] = 0
+        # # self.actions[:, 2] = 0.6 * np.sin(2 * time.time())
+        # # self.actions[:, 5] = 0.6 * np.sin(2 * time.time())
+        # # self.actions[:, 8] = 0.6 * np.sin(2 * time.time())
+        # # self.actions[:, 11] = 0.6 * np.sin(2 * time.time())
 
-        self.txHandler(self.actions[0].detach().cpu().numpy())
+        # self.txHandler(self.actions[0].detach().cpu().numpy())
 
-        self.decode_observation()
-
-        # return clipped obs, clipped states (None), rewards, dones and infos
-        clip_obs = self.cfg.normalization.clip_observations
-        self.obs_buf = torch.clip(self.obs_buf, -clip_obs, clip_obs)
-        if self.privileged_obs_buf is not None:
-            self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
+        # self.decode_observation()
 
         return self.obs_buf, self.privileged_obs_buf, self.rew_buf, self.reset_buf, self.extras, None, None
+
+    def _compute_real_observations(self):
+        used_obs = np.array(self.rx_udp.obs).reshape(1, -1)
+        used_obs[:, 6:9] = self._recv_commands[:3] * self.commands_scale.cpu().numpy()
+
+        # used_obs = np.concatenate([used_obs[:, :3], used_obs[:, 6:-12], actions[None, :]], axis=-1) # HACK for current AMP
+        # used_obs = np.concatenate([used_obs[:, :3], used_obs[:, 6:]], axis=-1) # HACK for current AMP
+        # used_obs = np.concatenate([used_obs[:, :3], actions], axis=-1)
+        self.obs_buf = torch.from_numpy(used_obs).float().to(self.device)
+
+        return self.obs_buf
 
     def _rpy_to_quat(self, rpy):
         rot = Rotation.from_euler('xyz', rpy, degrees=False)
         rot_quat = rot.as_quat()
         return rot_quat
-
-    def decode_observation(self):
-        # Convert quaternion from wxyz to xyzw, which is default for Pybullet.
-        # print(self.raw_observation)
-
-        command = np.array([1, 0, 0])
-
-        used_obs = self.raw_observation.copy()
-        used_obs[6:9] = command
-
-        used_obs = np.concatenate([used_obs[:3], used_obs[6:]]) # HACK for current AMP
-
-
-        self.obs_buf = torch.from_numpy(used_obs).float().to(self.device).unsqueeze(0)
-
-
-    def rxHandler(self):
-        while not self.is_running.is_set():
-            n_elements = 45
-            dtype = np.float32
-
-            rx_buffer = self.rx_udp.recvNumpy(
-                bufsize=n_elements*np.dtype(dtype).itemsize, 
-                dtype=dtype, 
-                timeout=0.05)
-            if rx_buffer is not None:
-                self.raw_observation[:] = rx_buffer
-
-    def txHandler(self, actions: np.ndarray):
-        actions = actions.astype(np.float32)
-
-        self.tx_udp.send(actions)
-        # print("TX message: %s" % actions)
-
+    
+    def get_sit_pos(self):
+        return torch.tensor([
+            0,-35/57.3,65/57.3,0,-35/57.3,65/57.3,0,-35/57.3,65/57.3,0,-35/57.3,65/57.3
+        ]) / self.cfg.control.action_scale
+    

@@ -59,7 +59,6 @@ class DiffusionEnvWrapper:
         pred_action = action_dict['action_pred'].cpu()
 
         action_step = pred_action[:,-1]
-        print(action_step)
         # print("current idx: ", self.idx, " took action")
 
         obs, _, rews, dones, infos, _, _ = self.env.step(action_step.detach())
