@@ -36,8 +36,8 @@ def add_input(input_queue, stop_event):
         input_queue.put(sys.stdin.read(1))
 
 def play(args):
-    gamepad = Gamepad(0)
-    gamepad.start()
+    # gamepad = Gamepad(0)
+    # gamepad.start()
 
 
     checkpoint: str = args.checkpoint
@@ -148,7 +148,8 @@ def play(args):
             # time.sleep(0.001)
             idx += 1
     except KeyboardInterrupt:
-        gamepad.stop()
+        exit()
+        # gamepad.stop()
         
 
 if __name__ == '__main__':

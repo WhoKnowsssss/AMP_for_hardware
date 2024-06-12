@@ -58,6 +58,8 @@ class DiffusionEnvWrapper:
         udp.init_diffusion_wrapper(byref(self.c_wrapper), byref(self.env.rx_udp), actions_ptr)
         self.not_transitioned = True
         self.not_transitioned_2 = True
+        self.not_transitioned_3 = True
+        self.not_transitioned_4 = True
         
     # def step(self):
     #     history = self.n_obs_steps
@@ -100,7 +102,7 @@ class DiffusionEnvWrapper:
         #     self.env._recv_commands[0] = 0.3
         #     self.not_transitioned = False
         #     self.state_history_numpy[:] = self.state_history_numpy[-1]
-        if (time.perf_counter() - self.start_time > 6.4) and (self.not_transitioned) and ((time.perf_counter() - self.start_time < 20.)):
+        if (time.perf_counter() - self.start_time > 5.2) and (self.not_transitioned) and ((time.perf_counter() - self.start_time < 5.9)):
             self.env._recv_commands[1] = -1.
             self.env._recv_commands[0] = 0.1
             self.not_transitioned = False
@@ -108,15 +110,29 @@ class DiffusionEnvWrapper:
             self.c_wrapper.acs_params[2] = 1.
 
 
-        if (time.perf_counter() - self.start_time > 13.3) and (self.not_transitioned_2):
+        if (time.perf_counter() - self.start_time > 8.5) and (self.not_transitioned_2) and (time.perf_counter() - self.start_time < 11.3):
             self.c_wrapper.acs_params[2] = 0.
-            self.env._recv_commands[1] = 0.
+            self.env._recv_commands[1] = 0.5
             self.env._recv_commands[0] = 0.4
             self.not_transitioned_2 = False
             self.state_history_numpy[:] = self.state_history_numpy[-1]
 
+        if (time.perf_counter() - self.start_time > 11.4) and (self.not_transitioned_3) and (time.perf_counter() - self.start_time < 13.):
+            self.c_wrapper.acs_params[2] = 0.
+            self.env._recv_commands[1] = 0.
+            self.env._recv_commands[0] = 0.7
+            self.not_transitioned_3 = False
+            self.state_history_numpy[:] = self.state_history_numpy[-1]
+
+        if (time.perf_counter() - self.start_time > 15.) and (self.not_transitioned_4) and (time.perf_counter() - self.start_time < 15.3):
+            self.c_wrapper.acs_params[2] = 0.
+            self.env._recv_commands[1] = 0.
+            self.env._recv_commands[0] = 0.3
+            self.not_transitioned_4 = False
+            self.state_history_numpy[:] = self.state_history_numpy[-1]
+
         self.state_history_numpy[:,6:9] = (self.env._recv_commands * self.env.commands_scale.cpu().numpy())
-        print(self.state_history_numpy[-1, 6:9])
+        # print(self.state_history_numpy[-1, 6:9])
         obs_dict = {'obs': torch.from_numpy(self.state_history_numpy).unsqueeze(0).to(self.env.device)[:,1:]}
         # obs_dict = {'obs': self.state_history[:,1:]}
         # print("new actions start")
@@ -128,15 +144,27 @@ class DiffusionEnvWrapper:
        
         actions = pred_action[:,history:history+self.n_action_steps,:]
 
-        if (time.perf_counter() - self.start_time > 6.) and (time.perf_counter() - self.start_time < 6.4):
+        if (time.perf_counter() - self.start_time > 4.5) and (time.perf_counter() - self.start_time < 5.4):
             actions[:] = self.env.get_sit_pos()
             self.c_wrapper.acs_params[2] = 1.
 
-        if (time.perf_counter() - self.start_time) > 12 and (time.perf_counter() - self.start_time) < 12.1:
+        if (time.perf_counter() - self.start_time) > 8.5 and (time.perf_counter() - self.start_time) < 9.2:
             self.c_wrapper.acs_params[2] = 2.
 
-        if (time.perf_counter() - self.start_time) > 12.1 and (time.perf_counter() - self.start_time) < 13.3:    
+        if (time.perf_counter() - self.start_time) > 9.2 and (time.perf_counter() - self.start_time) < 9.5:   
+            self.c_wrapper.acs_params[2] = 3.
             actions[:] = 0.
+
+        if (time.perf_counter() - self.start_time) > 11.3 and (time.perf_counter() - self.start_time) < 11.7:   
+            self.c_wrapper.acs_params[2] = 4.
+            actions[:] = 0.
+        if (time.perf_counter() - self.start_time) > 15 and (time.perf_counter() - self.start_time) < 15.2:   
+            actions[:] = 0.
+        # if (time.perf_counter() - self.start_time) < 8.9:
+        #     actions[:] = 0.
+
+        # if (time.perf_counter() - self.start_time) > 8.1 and (time.perf_counter() - self.start_time) < 8.9:   
+        #     actions[:] = 0.
         # print("acs params: ", self.c_wrapper.acs_params[2])
 
         actions: np.array = actions.detach().cpu().numpy()
