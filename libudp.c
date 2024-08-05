@@ -129,7 +129,7 @@ void send_action(void *wrapper_ptr) {
       // CoRL rebuttal: 
       // when using `if` here, the policy action will be delayed by 1 step
       // when using `while` here, the policy action will be immediately sent out without delay
-      while (wrapper->newActionFlag == 0) {
+      if (wrapper->newActionFlag == 0) {
         // printf("Missed Diffusion Step! \n");
       }
 

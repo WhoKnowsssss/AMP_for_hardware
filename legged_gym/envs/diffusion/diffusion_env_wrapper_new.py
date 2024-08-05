@@ -139,7 +139,7 @@ class DiffusionEnvWrapper:
         t_start = time.perf_counter()
         action_dict = self.policy.predict_action(obs_dict)
         pred_action = action_dict['action_pred']
-        time.sleep(0.005)
+        # time.sleep(0.005)
 
         print("policy inference:", time.perf_counter() - t_start)
        
