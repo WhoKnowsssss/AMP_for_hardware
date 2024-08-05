@@ -126,9 +126,13 @@ void send_action(void *wrapper_ptr) {
     // printf("Diffusion Flag: %d, idx: %d\n", wrapper->stepDiffusionFlag, idx);
 
     if (idx == 0) {
-      if (wrapper->newActionFlag == 0){
-        printf("Missed Diffusion Step! \n");
+      // CoRL rebuttal: 
+      // when using `if` here, the policy action will be delayed by 1 step
+      // when using `while` here, the policy action will be immediately sent out without delay
+      while (wrapper->newActionFlag == 0) {
+        // printf("Missed Diffusion Step! \n");
       }
+
       wrapper->newActionFlag = 0;
         memcpy(wrapper->action_queue[0], wrapper->new_action_queue, N_ACTIONS * sizeof(float) * N_ACTION_STEPS);
         // Print action queue

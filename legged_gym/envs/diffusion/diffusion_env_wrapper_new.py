@@ -134,13 +134,14 @@ class DiffusionEnvWrapper:
         self.state_history_numpy[:,6:9] = (self.env._recv_commands * self.env.commands_scale.cpu().numpy())
         # print(self.state_history_numpy[-1, 6:9])
         obs_dict = {'obs': torch.from_numpy(self.state_history_numpy).unsqueeze(0).to(self.env.device)[:,1:]}
-        # obs_dict = {'obs': self.state_history[:,1:]}
-        # print("new actions start")
-        # print("obs_dict: ", obs_dict['obs'].shape) 
-        # print(torch.all(obs_dict['obs'] == 0, dim=-1))
-        # print("obs_dict: ", obs_dict['obs'][:,:,0])
+        
+        # policy inference
+        t_start = time.perf_counter()
         action_dict = self.policy.predict_action(obs_dict)
         pred_action = action_dict['action_pred']
+        time.sleep(0.005)
+
+        print("policy inference:", time.perf_counter() - t_start)
        
         actions = pred_action[:,history:history+self.n_action_steps,:]
 
