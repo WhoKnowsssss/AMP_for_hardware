@@ -119,6 +119,10 @@ class RealCyberDog2(LeggedRobot):
 
         self._state_flag = 0
 
+        self.CMD_STANDWALK = np.array([0.1, -1, 0.0, ])
+        self.CMD_TROT_PACE = np.array([0.3, 0.5, 0.0, ])
+        self.CMD_HOP_BOUNCE = np.array([0.4, 0., 0.0, ])
+
         # standwalk
         # self._recv_commands = np.array([0.1, -1, 0.0, ])
 

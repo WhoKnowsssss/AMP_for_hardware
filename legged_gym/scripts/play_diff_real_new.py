@@ -118,38 +118,24 @@ def play(args):
     env = DiffusionEnvWrapper(env=env, policy=policy, n_obs_steps=n_obs_steps, n_action_steps=n_action_steps)
 
 
-    idx = 0
-    global_idx = 0
-    start_idx = np.inf
-    stand_override = False
+    
+    datarecorder = []
+    
 
-    s = time.perf_counter()
-
-
-    # TODO: set the frequency of diffusion policy here. 
-    # The frequency should be 30 / n_action_steps
-    # diff_event = IntervalTimer(1. / DIFFUSE_UPDATE_FREQUENCY, infer_diffusion_callback) 
-
-
-    # diff_event.start()
-    idx = 0
     try:
         while True:
-            # if idx % 10 == 0:
-                # velx = np.abs(gamepad.getY(Hand.left)) * 0.7 + 0.3
-                # env.set_command(velx)
-
-            # print("outer: ", env.c_wrapper.stepDiffusionFlag)
             if env.c_wrapper.stepDiffusionFlag == 1:
                 env.c_wrapper.stepDiffusionFlag = 0
-                # s2 = time.perf_counter()
                 env.step_diffusion_new()
-                # print("diff time:", (time.perf_counter() - s2))
-            # time.sleep(0.001)
-            idx += 1
+                datarecorder.append([env.time_since_start] + env.tmp_obs.tolist())
+            
     except KeyboardInterrupt:
+
+        import json
+        json.dump(datarecorder, open("recorded_acs.json", "w"))
+
+
         exit()
-        # gamepad.stop()
         
 
 if __name__ == '__main__':
