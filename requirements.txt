@@ -5,3 +5,4 @@ pybullet
 opencv-python
 torchaudio
 cuda-python
+inputs
